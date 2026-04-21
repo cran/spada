@@ -1,0 +1,551 @@
+
+# ui --------------------------------------------------------------------------
+exploratory_ui <- function(id) {
+  ns <- NS(id)
+
+  card(
+    full_screen = T,
+    card_body(
+      class = 'big-card',
+      layout_columns(
+        col_widths = c(2, 7, 3),
+        navset_card_pill(
+          full_screen = T,
+          nav_panel('Parameters',
+                    selectInput(ns('sel_vars'),
+                                list('Main Variable', bs_icon('info-circle')) |>
+                                  ttip('Dependent Variable'),
+                                choices = NULL),
+                    selectInput(ns('sel_vars2'),
+                                list('Variable 2', bs_icon('info-circle')) |>
+                                  ttip('Independent Variable'),
+                                choices = NULL)
+                    ),
+          nav_panel('Filters',
+                    checkboxInput(
+                      ns('outliers'),
+                      list('Remove Outliers',
+                      bs_icon('info-circle')) |>
+                        ttip('Only for numeric vars')
+                    )
+          )
+        ),
+        navset_card_pill(
+          full_screen = T,
+          nav_panel(
+            'Distribution',
+            full_screen = T,
+            card_body(plotOutput(ns('dist_plot'))),
+            card_footer(
+              fluidRow(
+                column(6,
+                       radioGroupButtons(
+                         ns('radio_dist_plot'),
+                         'Plot type:',
+                         c('Histogram' = 'hist',
+                           'Boxplot' = 'boxplot',
+                           'Boxplot by Groups' = 'boxplot_group',
+                           'Dots' = 'dots',
+                           'Barplot' = 'barplot'), size = 'sm', individual = T)),
+                column(2, numericInput(ns('var_percentile'), 'Percentile', 50, 0, 100, 5)),
+                column(1, conditionalPanel(
+                  condition = "input.radio_dist_plot == 'hist'", ns = ns,
+                  numericInput(ns('bins'), 'Bins', 25, 5, step = 5))
+                ),
+                column(3, div(insert_output_ui(ns('insert_dist_plot'))),
+                    style = 'margin-top: 28px')
+              ),
+              div(style = 'margin-bottom: -8px !important;'),
+            )
+          ),
+          nav_panel(
+            'Scatter',
+            full_screen = T,
+            card_body(plotOutput(ns('scatter_plot'))),
+            card_footer(
+              layout_column_wrap(
+                checkboxInput(
+                  ns('scatter_lm'),
+                  list('Plot Linear Model', bs_icon('info-circle')) |>
+                    ttip('Show the line only if LM model was created')),
+                btn_task(ns('btn_scatter'), 'Generate Plot', icon('chart-simple')),
+                insert_output_ui(ns('insert_scatter'))
+              ),
+              div(style = 'margin-bottom: -18px !important;'),
+            )
+          ),
+          nav_panel('Table', full_screen = T, table_values_ui(ns('table_values'))),
+          nav_panel(
+            'Linear Model',
+            full_screen = T,
+            navset_card_pill(
+              nav_panel(
+                'Parameters',
+                sliderInput(ns('sample_size'), 'Sample Size (%)', 0, 100, 100) |>
+                  tooltip('Applied only if valid values are greater than 10.000'),
+                layout_column_wrap(
+                  btn_task(ns('btn_scatter_lm_run'), 'Run Linear Model', icon('gear')),
+                  btn_task(ns('btn_scatter_lm_clear'), 'Clear Linear Model', icon('trash-can'))
+                )
+              ),
+              nav_panel(
+                'Output',
+                card_body(gt_output(ns('lm_var_table')), gt_output(ns('lm_metrics'))),
+                card_footer(insert_output_ui(ns('insert_lm_model_output')))
+              ),
+              nav_panel(
+                'Residuals',
+                plotOutput(ns('lm_resid_plot')),
+                card_footer(
+                  layout_column_wrap(
+                    radioGroupButtons(
+                      ns('radio_lm_resid'),
+                      'Plot type:',
+                      c(
+                        'Histogram' = 'hist',
+                        'Boxplot' = 'boxplot',
+                        'Dots' = 'dots'
+                      ),
+                      size = 'sm',
+                      individual = T
+                    ),
+                    btn_task(
+                      ns('btn_lm_resid'),
+                      'Plot residuals',
+                      icon('chart-simple'),
+                      style = 'margin-top: 28px'
+                    ),
+                    div(insert_output_ui(ns(
+                      'insert_lm_resid_plot'
+                    )), style = 'margin-top: 28px')
+                  ),
+                  div(style = 'margin-bottom: -24px !important;'),
+                )
+              ),
+            )
+          ),
+        ),
+        navset_card_pill(
+          nav_panel('Stats', full_screen = T, stats_table_ui(ns('pA_stats')))
+        )
+      )
+    )
+  )
+}
+
+# server ----------------------------------------------------------------------
+exploratory_server <- function(id, output_report) {
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+
+    # df active ---------------------------------------------------------------
+    df <- reactiveValues()
+    observe({
+      df$df_active <- get_act_dt(session)
+    })
+
+    var_analysis <- reactive({
+      session$userData$dt$act_meta()[perc_nas != 1, var]
+    })
+
+    observe({
+      vars <- var_analysis()
+      req(vars)
+
+      updateSelectInput(
+        session,
+        "sel_vars",
+        choices = vars,
+        selected = vars[1]
+      )
+
+      updateSelectInput(
+        session,
+        "sel_vars2",
+        choices = vars,
+        selected = vars[2]
+      )
+    })
+
+
+    # outlier filter ----------------------------------------------------------
+    outliers_index <- reactive({
+      v <- df$df_active[[input$sel_vars]]
+      if(input$outliers & is.numeric(v)) {
+        q1 <- fquantile(v, 0.25)
+        q3 <- fquantile(v, 0.75)
+        dist_interquatile <- q3 - q1
+        v >= (q1 - 1.5 * dist_interquatile) & v <= (q3 + 1.5 * dist_interquatile)
+      } else {
+        rep(T, length(v))
+      }
+    })
+
+    # values to analysis page -------------------------------------------------
+    var <- reactive({
+      req(input$sel_vars)
+      df$df_active[[input$sel_vars]][outliers_index()]
+    })
+
+    var2 <- reactive({
+      req(input$sel_vars2)
+      df$df_active[[input$sel_vars2]][outliers_index()]
+    })
+
+    var_percentile <- reactive(
+      if(isTruthy(input$var_percentile) && is.numeric(var()) &&
+         between(input$var_percentile, 0, 100)){
+        fquantile(var(), input$var_percentile / 100)
+      } else { NA }
+    )
+
+    # render plots ------------------------------------------------------------
+    dist_plot <- reactive({
+      req(var())
+      req(var2())
+
+      if (input$radio_dist_plot == 'barplot'){
+        validate(need(!is.numeric(var()), 'Var can not be numeric'))
+
+        spada_plot(type = 'barplot',
+                   df = data.frame(x = var()),
+                   xvar = 'x',
+                   ylab = 'Count',
+                   fill_color = session$userData$conf$plot_fill_color,
+                   sample_limit = session$userData$conf$plot_limit
+        )
+
+      } else {
+        validate(need(is.numeric(var()), 'Var must be numeric'))
+
+        if (input$radio_dist_plot == 'boxplot_group'){
+          validate(
+            need(!is.numeric(var2()) | (is.numeric(var2()) & is.integer(var2())),
+                 'Variable 2 can not be float'),
+            need(!is.complex(var2()), 'Variable 2 can not be complex')
+          )
+
+          spada_plot(
+            type = 'boxplot_group',
+            df = data.frame(x = {
+              if (var2() |> is.numeric())
+                as.factor(var2())
+              else
+                var2()
+            }, y = var()),
+            xvar = 'x',
+            yvar = 'y',
+            fill_color = session$userData$conf$plot_fill_color,
+            line_color = session$userData$conf$plot_line_color,
+            vertical_line = var_percentile(),
+            sample_limit = session$userData$conf$plot_limit
+          )
+
+        } else {
+          validate(
+            need(isTruthy(input$var_percentile)
+                 && between(input$var_percentile, 0, 100), 'Percentile must be between 0 and 100')
+          )
+
+          if(input$radio_dist_plot == 'hist'){
+            validate(need(input$bins > 0, 'Bins must be 1 or higher'))
+
+            spada_plot(type = 'hist',
+                       df = data.frame(x = var()),
+                       xvar = 'x',
+                       ylab = 'Count',
+                       fill_color = session$userData$conf$plot_fill_color,
+                       line_color = session$userData$conf$plot_line_color,
+                       title_color = session$userData$conf$plot_title_color,
+                       title = paste('Histogram -', input$sel_vars),
+                       bins = input$bins,
+                       vertical_line = var_percentile(),
+                       sample_limit = session$userData$conf$plot_limit
+            )
+
+          } else if (input$radio_dist_plot == 'boxplot'){
+
+            spada_plot(type = 'boxplot',
+                       df = data.frame(x = var()),
+                       xvar = 'x',
+                       fill_color = session$userData$conf$plot_fill_color,
+                       line_color = session$userData$conf$plot_line_color,
+                       vertical_line = var_percentile(),
+                       sample_limit = session$userData$conf$plot_limit
+            )
+
+          } else if (input$radio_dist_plot == 'dots'){
+
+            spada_plot(type = 'dots',
+                       df = data.frame(x = seq_along(var()), y = var()),
+                       xvar = 'x',
+                       yvar = 'y',
+                       xlab = 'Index',
+                       ylab = 'Values',
+                       fill_color = session$userData$conf$plot_fill_color,
+                       line_color = session$userData$conf$plot_line_color,
+                       vertical_line = var_percentile(),
+                       point_shape = if(session$userData$conf$plot_limit > 1e4 &&
+                                        length(var()) > 1e4) '.' else 20,
+                       sample_limit = session$userData$conf$plot_limit
+            )
+          }
+        }
+      }
+    })
+
+    output$dist_plot <- renderPlot({
+      req(dist_plot())
+      dist_plot()
+    }, res = 96)
+    # render scatter plot -----------------------------------------------------
+    scatter_plot <- reactive({
+
+      model_plot <- (input$scatter_lm &&
+                       linear_model$y_name == input$sel_vars &&
+                       linear_model$x_name == input$sel_vars2)
+
+      s_plot <- spada_plot(type = 'scatter',
+                 df = data.frame(x = var2(), y = var()),
+                 xvar = 'x',
+                 yvar = 'y',
+                 xlab = input$sel_vars2,
+                 ylab = input$sel_vars,
+                 title = if(model_plot){
+                   paste(
+                    'Adjusted R Squared:',
+                    summary(linear_model$model)$r.squared |> round(4)
+                    )
+                 } else {
+                   paste('Pearson Correlation:', stats_correlation() |> round(4))
+                 },
+                 fill_color = session$userData$conf$plot_fill_color,
+                 title_color = session$userData$conf$plot_title_color,
+                 point_shape = if(session$userData$conf$plot_limit > 1e4 &&
+                                  length(var()) > 1e4) '.' else 20,
+                 sample_limit = session$userData$conf$plot_limit
+        )
+        # insert model line
+        if(model_plot){
+          s_plot <- s_plot +
+            geom_line(
+              data = data.frame(x = linear_model$x, y = linear_model$y),
+              aes(x = x, y = y),
+              color = session$userData$conf$plot_line_color,
+              linewidth = 1
+            )
+        }
+
+      s_plot
+
+    })|> bindEvent(input$btn_scatter)
+
+    output$scatter_plot <- renderPlot({
+      validate(
+        need(is.numeric(var()) && is.numeric(var2()), 'Variables must be numeric')
+      )
+      scatter_plot()
+    }, res = 96)
+
+    # tables ------------------------------------------------------------------
+    table_values_server('table_values',
+                        var,
+                        var2,
+                        reactive(input$sel_vars),
+                        reactive(input$sel_vars2))
+
+    # linear model ------------------------------------------------------------
+    linear_model <- reactiveValues(
+      model = NULL,
+      x = NULL,
+      y = NULL,
+      x_name = '',
+      y_name = ''
+    )
+
+    observe({
+      if(!is.numeric(var())){
+        msg('The Dependent variable must be numeric', 2.5)
+      } else if (input$sel_vars == input$sel_vars2) {
+        msg('Choose diferent variables for X and Y.', 2.5)
+      } else {
+        linear_model$y_name <- input$sel_vars
+        linear_model$x_name <- input$sel_vars2
+
+        var_size <- length(var())
+
+        if(var_size < 10e3) {
+          var_y <- var()
+          var_x <- var2()
+        } else {
+          sample_size <- min(var_size,
+                             floor(var_size * min(1, max(0, input$sample_size/100))))
+          lm_sample <- sample.int(var_size, sample_size, replace = F) |>
+            sort()
+          var_y <- var()[lm_sample]
+          var_x <- var2()[lm_sample]
+        }
+
+        linear_model$model <- lm(var_y ~ var_x, model = F)
+        linear_model$x <- var_x
+        linear_model$y <- linear_model$model$fitted.values
+        msg('Lm model completed.')
+      }
+    }) |> bindEvent(input$btn_scatter_lm_run)
+
+    observe({
+      linear_model$model <- NULL
+      linear_model$model$residuals <- NULL
+      linear_model$x <- NULL
+      linear_model$y <- NULL
+      linear_model$x_name <- ''
+      linear_model$y_name <- ''
+
+      # clear the residual plot to avoid incorrect output element
+      update_lm_resid_plot(update_lm_resid_plot() + 1)
+
+      msg('Lm model cleared.')
+    }) |> bindEvent(input$btn_scatter_lm_clear)
+
+    # print linear model ------------------------------------------------------
+    lm_var_table <- reactive({
+      req(linear_model$model)
+      output <- linear_model_df_output(linear_model$model |> summary())
+      output$Variable <- gsub('var_x', linear_model$x_name, output$Variable)
+
+      output |>
+        gt() |>
+        tab_header(title = 'Linear Model',
+                   subtitle = paste('Independent Variable:',
+                                    linear_model$y_name))
+    })
+
+    lm_metrics <- reactive({
+      req(linear_model$model)
+      linear_model_df_metrics(linear_model$model |> summary()) |>
+        gt() |> tab_header('Model metrics')
+    })
+
+    output$lm_var_table <- render_gt({
+      req(lm_var_table())
+      lm_var_table()
+    })
+
+    output$lm_metrics <- render_gt({
+      req(lm_metrics())
+      lm_metrics()
+    })
+
+    # plot linear model residuals ---------------------------------------------
+    update_lm_resid_plot <- reactiveVal(0)
+
+    observe({
+      update_lm_resid_plot(update_lm_resid_plot() + 1)
+    }) |> bindEvent(input$btn_lm_resid)
+
+    lm_resid_plot <- reactive({
+      req(linear_model$model$residuals)
+
+      if(input$radio_lm_resid == 'hist'){
+
+        spada_plot(type = 'hist',
+                   df = data.frame(x = linear_model$model$residuals),
+                   xvar = 'x',
+                   ylab = 'Count',
+                   fill_color = session$userData$conf$plot_fill_color,
+                   line_color = session$userData$conf$plot_line_color,
+                   title_color = session$userData$conf$plot_title_color,
+                   sample_limit = session$userData$conf$plot_limit
+        )
+
+      } else if (input$radio_lm_resid == 'boxplot'){
+
+        spada_plot(type = 'boxplot',
+                   df = data.frame(x = linear_model$model$residuals),
+                   xvar = 'x',
+                   fill_color = session$userData$conf$plot_fill_color,
+                   line_color = session$userData$conf$plot_line_color,
+                   sample_limit = session$userData$conf$plot_limit
+        )
+
+      } else if (input$radio_lm_resid == 'dots'){
+
+        spada_plot(type = 'dots',
+                   df = data.frame(x = seq_along(linear_model$model$residuals),
+                                   y = linear_model$model$residuals),
+                   xvar = 'x',
+                   yvar = 'y',
+                   xlab = 'Index',
+                   ylab = 'Values',
+                   fill_color = session$userData$conf$plot_fill_color,
+                   line_color = session$userData$conf$plot_line_color,
+                   vertical_line = 0,
+                   point_shape = if(session$userData$conf$plot_limit > 1e4 &&
+                                    length(linear_model$model$residuals) > 1e4) '.' else 20,
+                   sample_limit = session$userData$conf$plot_limit,
+                   line_type = 2
+        )
+      }
+    }) |> bindEvent(update_lm_resid_plot())
+
+    output$lm_resid_plot <- renderPlot({
+      validate(need(isTruthy(linear_model$model), 'No residuals to plot'))
+
+      lm_resid_plot()
+    }, res = 96)
+
+    # metrics -----------------------------------------------------------------
+    stats_sd <- reactive(if(is.numeric(var())) fsd(var(), na.rm = T) else NA)
+
+    stats_correlation <- reactive(
+      if(is.numeric(var()) && is.numeric(var2()) && stats_sd() != 0 &&
+         !is.na(stats_sd())){
+        sd_var2 <- fsd(var2(), na.rm = T)
+        if(sd_var2 == 0 || sd_var2 |> is.na()) {
+          NA
+        } else {
+          cor(var(), var2(), method = 'p', use = 'na.or.complete')
+        }
+      } else { NA }
+    )
+    # stats table -------------------------------------------------------------
+    mod_stats_table <- stats_table_server(
+      'pA_stats',
+      var,
+      reactive(input$sel_vars),
+      reactive(input$var_percentile),
+      var_percentile,
+      stats_sd,
+      stats_correlation
+    )
+
+    # insert dist plot to output ----------------------------------------------
+    insert_output_server(
+      'insert_dist_plot',
+      reactive(plotTag(dist_plot(), '', width = 1000, height = 500)),
+      'Exploratory Plot'
+    )
+
+    # insert scatter to output ------------------------------------------------
+    insert_output_server(
+      'insert_scatter',
+      reactive(plotTag(scatter_plot(), '', width = 1000, height = 500)),
+      'Scatter Plot'
+    )
+
+    # insert lm model output --------------------------------------------------
+    insert_output_server(
+      'insert_lm_model_output',
+      reactive(gen_table2(lm_var_table(), lm_metrics())),
+      'Linear Model'
+    )
+
+    # insert lm residual plot to output ---------------------------------------
+    insert_output_server(
+      'insert_lm_resid_plot',
+      reactive(plotTag(lm_resid_plot(), '', width = 1000, height = 500)),
+      'Linear Model - Residuals Plot'
+    )
+
+  })
+}
