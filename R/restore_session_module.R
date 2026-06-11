@@ -2,7 +2,6 @@
 # ui --------------------------------------------------------------------------
 restore_session_ui <- function(id) {
   ns <- NS(id)
-
 }
 
 # server ----------------------------------------------------------------------
@@ -19,13 +18,13 @@ restore_session_server <- function(id) {
 	        session$userData$dt$dt
 	    )
 
-	    if(session$userData$conf$restore_session == 'always') {
+	    if(session$userData$run_local && session$userData$conf$restore_session == 'always'){
 
 	      if(!file.exists(paste0(session$userData$conf$data_dir, '/data.qs2'))){
 	        session$userData$conf$restore_data_status <- 2
 
 	      } else {
-
+	        update_waiter_text(session, 'spada_startup_text', 'Loading data')
 	        previous_data <- qs_read(paste0(session$userData$conf$data_dir, '/data.qs2'))
 
 	        # check data format
@@ -36,7 +35,7 @@ restore_session_server <- function(id) {
 	          previous_data <- lapply(previous_data, as.data.table)
 
 	          # if empty entry only keep loaded data
-	          if(session$userData$conf$empty_datasets == 1){
+	          if(session$userData$conf$no_input_data){
 	            session$userData$dt$dt <- previous_data
 	            # update meta
 	            session$userData$dt$meta <- lapply(previous_data, df_info)
@@ -67,6 +66,8 @@ restore_session_server <- function(id) {
 	        session$userData$conf$restore_output_status <- 2
 
 	      } else {
+
+	        update_waiter_text(session, 'spada_startup_text', 'Loading output')
 	        previous_output <- qs_read(paste0(session$userData$conf$data_dir, '/output.qs2'))
 
 	        # check output format
@@ -119,26 +120,23 @@ restore_session_server <- function(id) {
 	      session$userData$conf$restore_data_status, '.',
 	      session$userData$conf$restore_output_status
 	    )
-
 	  }) |> bindEvent(session$userData$conf$restore_session, once = T)
 
 	  # show modal with restored status
 	  observe({
 	    req(session$userData$conf$restore_status)
 
-	    if(any(session$userData$conf$restore_session %in% c('always', 'ask'))){
+	    if(session$userData$run_local && session$userData$conf$restore_session == 'always'){
 
 	      display_restore_status(
 	        session$userData$conf$restore_status,
 	        actionButton(ns('btn_dismiss_restore_status'), 'OK', class = 'btn-task')
 	      )
-
 	    }
 	  }) |> bindEvent(session$userData$conf$restore_status, once = T)
 
 	  observe({
 	    removeModal()
-
 	  }) |> bindEvent(input$btn_dismiss_restore_status)
 
   })

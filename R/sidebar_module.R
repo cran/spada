@@ -11,7 +11,7 @@ sidebar_ui <- function(id) {
         class = 'accordion-sidebar',
         'Active Dataset',
         icon = bs_icon('check2-square', size = '1.75em'),
-        selectInput(ns('sel_act_dt'), NULL, choices = NULL, selected = NULL),
+        selectInput(ns('sel_act_dt'), NULL, choices = character(0)),
         uiOutput(ns('df_info')),
         fluidRow(
           column(3, actionButton(ns('df_btn_overview'), '',
@@ -35,14 +35,15 @@ sidebar_ui <- function(id) {
         class = 'accordion-sidebar',
         'Datasets',
         icon = bs_icon('stack', size = '1.75em'),
-        selectInput(ns('sel_datasets_names'), '', choices = NULL),
+        selectInput(ns('sel_datasets_names'), '', choices = character(0)),
         actionButton(ns('btn_preview_dt'), 'Preview', icon('magnifying-glass'),
                      class = 'btn-task') |>
           popover(htmlOutput(ns('df_preview')),
                   options = list(customClass = 'preview-dt-popup'))
       )
     ),
-    btn_task(ns('btn_save_session'), 'Save Session', icon('save'))
+    btn_task(ns('btn_save_session'), 'Save Session', icon('save')),
+    input_switch(id = ns('dark_mode'), label = 'Dark mode', value = FALSE)
   )
 }
 
@@ -76,7 +77,7 @@ sidebar_server <- function(id, app_session) {
 
     # update active dataset list --------
     observe({
-      req(session$userData$dt$dt, session$userData$dt$act_name)
+      req(session$userData$dt_names(), session$userData$dt$act_name)
 
       updateSelectInput(
         session,
@@ -87,7 +88,6 @@ sidebar_server <- function(id, app_session) {
         ),
         selected = session$userData$dt$act_name
       )
-
     })
 
     # update active dataset --------
@@ -96,7 +96,6 @@ sidebar_server <- function(id, app_session) {
       session$userData$dt$act_name <- input$sel_act_dt
       session$userData$dt$bkp0 <- copy(get_act_dt(session))
       session$userData$dt$bkp <- NULL
-
     }) |> bindEvent(input$sel_act_dt, ignoreInit = T)
 
     # mini buttons --------
@@ -121,7 +120,8 @@ sidebar_server <- function(id, app_session) {
 
     # list of datasets --------------------------------------------------------
     observe({
-      req(session$userData$dt$dt, session$userData$dt$act_name)
+      req(session$userData$dt_names(), session$userData$dt$act_name)
+
       choices <- c(
         session$userData$dt$act_name,
         setdiff(session$userData$dt_names(), session$userData$dt$act_name)
@@ -137,37 +137,55 @@ sidebar_server <- function(id, app_session) {
       n <- min(5, session$userData$dt$dt[[input$sel_datasets_names]] |> fnrow())
       df <- session$userData$dt$dt[[input$sel_datasets_names]][1:n, ]
 
-      gt::gt(df) |>
+      gt(df) |>
         tab_header(input$sel_datasets_names) |>
         tab_options(heading.align = 'left') |>
-        gt::as_raw_html() |>
+        as_raw_html() |>
         HTML()
     })
 
     # save session ------------------------------------------------------------
     observe({
 
-      spada_save(session$userData$conf$data_dir,
-                 session$userData$dt$dt,
-                 'data.qs2')
+      if(!session$userData$run_local){
+        abort_run_local_modal('Spada must run locally to be able to save the session.')
+      } else {
+        spada_save(session$userData$conf$data_dir,
+                   session$userData$dt$dt,
+                   'data.qs2')
 
-      spada_save(session$userData$conf$data_dir,
-                 session$userData$out$elements,
-                 'output.qs2')
+        spada_save(session$userData$conf$data_dir,
+                   session$userData$out$elements,
+                   'output.qs2')
 
-      spada_save(session$userData$conf$conf_dir,
-                 reactiveValuesToList(session$userData$conf),
-                 'conf.qs2')
+        spada_save(session$userData$conf$conf_dir,
+                   reactiveValuesToList(session$userData$conf),
+                   'conf.qs2')
 
-      show_toast(
-        title = 'Session saved',
-        type = 'info',
-        position = 'bottom-start',
-        timer = 2000,
-        timerProgressBar = F,
-        width = '250px'
-      )
-
+        show_toast(
+          title = 'Session saved',
+          type = 'info',
+          position = 'bottom-start',
+          timer = 2000,
+          timerProgressBar = F,
+          width = '250px'
+        )
+      }
     }) |> bindEvent(input$btn_save_session)
+
+    # apply dark mode ------------
+    observe({
+      new_theme <- if(isTRUE(input$dark_mode)) {
+        'spada_dark_theme'
+      } else {
+        'spada_theme'
+      }
+
+      if(identical(session$userData$conf$theme, new_theme)) return()
+
+      set_spada_theme(session = session, theme = new_theme)
+
+    }) |> bindEvent(input$dark_mode, ignoreInit = TRUE)
+
   })
 }

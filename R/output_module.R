@@ -79,7 +79,7 @@ output_server <- function(id) {
 
       showModal(
         modalDialog(
-          title = 'Edit Output element',
+          title = div(icon('pen-to-square'), 'Edit Output element'),
           size = 'l',
           tagList(
             textInput(ns('output_edit_title'), 'Title', value = el_title),
@@ -209,7 +209,7 @@ output_server <- function(id) {
     # reset output ------------------------------------------------------------
     observe({
       showModal(modalDialog(
-        title = 'Reset Output',
+        title = div(icon('rotate-right'), 'Reset Output'),
         'Do you want to remove all the elements?',
         easyClose = FALSE,
         size = 'l',
@@ -233,40 +233,33 @@ output_server <- function(id) {
     # save html ---------------------------------------------------------------
     output$btn_save_html <- downloadHandler(
       filename = function() {
-        paste0('output_', format(Sys.time(), format = '%Y%m%d%H%M%S'), '.html')
+        paste0('spada_output_', format(Sys.time(), format = '%Y%m%d%H%M%S'), '.html')
       },
       content = function(file) {
-
-        savable_output <- list(
-          report_card(),
-          lapply(
-            session$userData$out$elements,
-            function(x){ printable_report_card(NULL, x$card, NULL) }
-          )
+        save_html(
+          spada_output(session$userData$out$elements, spada_output_header),
+          file
         )
-
-        doc <- tags$html(
-          output_export_css, tags$body(savable_output)
-        )
-
-        save_html(doc, file)
       }
     )
 
     # save session output -----------------------------------------------------
     observe({
-
-      showModal(modalDialog(
-        title = 'Save Output',
-        'Do you want to save the current Output? This will overwrite the previous one.',
-        easyClose = FALSE,
-        size = 'l',
-        footer = tagList(
-          actionButton(ns('btn_cancel_save_output'), 'No', icon('xmark'),
-                   class = 'btn-task btn-task-cancel'),
-          btn_task(ns('btn_confirm_save_output'), 'Yes', icon('check'))
-        )
-      ))
+      if(!session$userData$run_local){
+        abort_run_local_modal('Spada must run locally to be able to save the output.')
+      } else {
+        showModal(modalDialog(
+          title = div(icon('download'), 'Save Output'),
+          'Do you want to save the current Output? This will overwrite the previous one.',
+          easyClose = FALSE,
+          size = 'l',
+          footer = tagList(
+            actionButton(ns('btn_cancel_save_output'), 'No', icon('xmark'),
+                         class = 'btn-task btn-task-cancel'),
+            btn_task(ns('btn_confirm_save_output'), 'Yes', icon('check'))
+          )
+        ))
+      }
     }) |> bindEvent(input$btn_save_output_session)
 
     # cancel save output
@@ -285,18 +278,22 @@ output_server <- function(id) {
 
     # import session output ---------------------------------------------------
     observe({
-      showModal(modalDialog(
-        title = 'Import Output',
-        'Do you want to import the previous saved Output? This will erase
-        the current Output elements.',
-        easyClose = FALSE,
-        size = 'l',
-        footer = tagList(
-          actionButton(ns('btn_cancel_import_output'), 'No', icon('xmark'),
-                   class = 'btn-task btn-task-cancel'),
-          btn_task(ns('btn_confirm_import_output'), 'Yes', icon('check'))
-        )
-      ))
+      if(!session$userData$run_local){
+        abort_run_local_modal('Spada must run locally to be able to import the output.')
+      } else {
+        showModal(modalDialog(
+          title = div(icon('upload'), 'Import Output'),
+          'Do you want to import the previous saved Output? This will erase
+          the current Output elements.',
+          easyClose = FALSE,
+          size = 'l',
+          footer = tagList(
+            actionButton(ns('btn_cancel_import_output'), 'No', icon('xmark'),
+                     class = 'btn-task btn-task-cancel'),
+            btn_task(ns('btn_confirm_import_output'), 'Yes', icon('check'))
+          )
+        ))
+      }
     }) |> bindEvent(input$btn_import_output_session)
 
     # cancel import output

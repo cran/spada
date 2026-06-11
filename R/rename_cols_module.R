@@ -7,7 +7,7 @@ rename_cols_ui <- function(id) {
     card(
       card_header('Rename Column', class = 'mini-header'),
       card_body(
-        selectInput(ns('vars_sel'), 'Variable', NULL),
+        selectInput(ns('vars_sel'), 'Variable', ''),
 
         textInput(ns('txt_new_name'), 'New name'),
       ),
@@ -16,7 +16,7 @@ rename_cols_ui <- function(id) {
     card(
       card_header('Rename Multiple Columns', class = 'mini-header'),
       card_body(
-        selectizeInput(ns('vars_sel_multi'), 'Variables', NULL,
+        selectizeInput(ns('vars_sel_multi'), 'Variables', '',
                        multiple = T,
                        options = list(plugins = list('remove_button', 'clear_button')),
                        width = '80%'),
@@ -83,9 +83,7 @@ rename_cols_server <- function(id) {
       if(!isTruthy(input$vars_sel)){
         msg('Select at least one variable')
       } else {
-        if(is_valid_name(input$txt_new_name) &&
-           input$txt_new_name %notin% df_names()){
-
+        if(is_name_available(input$txt_new_name, df_names())){
           running_modal()
           temp <- copy(get_act_dt(session))
 
@@ -100,7 +98,6 @@ rename_cols_server <- function(id) {
         } else {
           msg_error('New name is not valid or already in use')
         }
-
       }
     }) |> bindEvent(input$btn_rename)
 
@@ -113,7 +110,6 @@ rename_cols_server <- function(id) {
         choices = c('', df_names())
       )
     }) |> bindEvent(df_names())
-
 
     observe({
       if(!isTruthy(input$vars_sel_multi)){

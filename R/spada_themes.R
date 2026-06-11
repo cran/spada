@@ -6,6 +6,7 @@ themes_names <- c('spada_theme', 'spada_dark_theme')
 main_color <- '#02517d'
 navbar_bg <- '#0A5A88'
 sidebar_color <- '#e3e3e4'
+inputs_border_color <- '#c8c8c8'
 bg_color <- '#f9f9f9'
 secondary <- '#0072B2'
 sucess <- '#009E73'
@@ -13,7 +14,6 @@ danger <- '#b60020'
 plot_fill_color <- '#0099F8'
 plot_line_color <- '#EE7942'
 plot_title_color <- '#02517d'
-
 
 startup_text_color <- '#FFFFFF'
 # palettes --------------------------------------------------------------------
@@ -27,24 +27,22 @@ red_palette <- c('#ffffff', '#b60020', '#750217')
 
 # basic rules -----------------------------------------------------------------
 
-theme_basic_rules <- as_sass(
-  list(
-    list(main_color = main_color,
-         secondary = secondary,
-         bg_color = bg_color,
-         sidebar_bg = sidebar_color,
-         grad1 = '#1f4e72',
-         grad2 = '#2a6485',
-         grad3 = '#3a7f9d',
-         grad4 = '#4b97b6',
-         grad5 = '#5fa3c2',
-         grad6 = '#4e96b6',
-         stati_card_text = '#ffffff'
-    ),
+theme_basic_rules <- list(
+  paste(
+    " $main_color:", main_color, ";",
+    " $secondary:", secondary, ";",
+    " $bg_color:", bg_color, ";",
+    " $sidebar_bg:", sidebar_color, ";",
+    " $inputs_border_color:", inputs_border_color, ";",
+
     "
-      /*.navbar-brand {
-        font-family: 'Open Sans', Ubuntu, 'system-ui';
-      }*/
+      $grad1: #1f4e72;
+      $grad2: #2a6485;
+      $grad3: #3a7f9d;
+      $grad4: #4b97b6;
+      $grad5: #5fa3c2;
+      $grad6: #4e96b6;
+      $stati_card_text: #ffffff;
 
       .navbar {
         min-height: 45px !important;
@@ -84,14 +82,14 @@ theme_basic_rules <- as_sass(
 
       .btn-task-cancel {
         color: #dc3545 !important;
-        background-color: white !important;
+        background-color: $bg_color !important;
         border-color: #dc3545 !important;
       }
 
       .btn-task-cancel:hover {
         background-color: $danger !important;
         border-color: $danger !important;
-        color: white !important;
+        color: $bg_color !important;
       }
 
       .mini-btn {
@@ -112,10 +110,10 @@ theme_basic_rules <- as_sass(
         background: transparent !important;
       }
 
-      .micro-btn-cancel:hover {
-        background-color: $secondary !important;
-        border-color: $secondary !important;
-        color: white !important;
+      .micro-btn-cancel:hover,
+      .micro-btn-cancel:focus,
+      .micro-btn-cancel:active {
+        color: $secondary !important;
       }
 
       .card, .well {
@@ -162,11 +160,45 @@ theme_basic_rules <- as_sass(
       .modal-content {
         border-radius: 0 !important;
       }
- ")
+
+      .modal-header {
+        background-color: #02517d;
+        color: white;
+        border-radius: 0 !important;
+      }
+
+    .navbar-nav .nav-link {
+      transition: background-color 0.2s ease;
+
+      border-radius: 10px;
+      margin: 1px;
+
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+
+    .navbar-nav .nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.12);
+      color: white !important;
+    }
+
+    .navbar-nav .nav-link.active {
+      background-color: rgba(255, 255, 255, 0.18);
+      color: white !important;
+    }
+
+    .selectize-input {
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
+    .selectize-dropdown {word-wrap: break-word;}
+
+  "
+  )
 )
 
 # default theme ---------------------------------------------------------------
-
 spada_theme <- bs_theme(
   version = 5,
   bg = bg_color,
@@ -187,7 +219,7 @@ spada_theme <- bs_theme(
   'dropdown-bg' = '#f9f9f9',
   'dropdown-color' = main_color,
   'dropdown-link-color' = '#000000',
-  'dropdown-link-hover-bg' = '#e3e3e4',
+  'dropdown-link-hover-bg' = sidebar_color,
   base_font = font_collection('Segoe UI', 'Ubuntu', 'system-ui')
 ) |> bs_add_rules(theme_basic_rules) |>
   bs_add_rules(
@@ -244,8 +276,39 @@ spada_theme <- bs_theme(
       .nav-pills .nav-link:hover {
         background-color: #f0f0f0 !important;
       }
+
+
+      .shiny-input-text,
+      .shiny-input-number,
+      .selectize-input,
+      .shiny-input-textarea textarea {
+        border: 1px solid #d1d1d1 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+
+        transition:
+          border-color 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .selectize-input:hover,
+      .shiny-input-text:hover,
+      .shiny-input-number:hover,
+      .shiny-input-textarea textarea:hover {
+        border-color: #c8c8c8 !important;
+        border-bottom: 1px solid $main_color !important;
+      }
+
+      .selectize-input:focus,
+      .shiny-input-text:focus,
+      .shiny-input-number:focus,
+      .shiny-input-textarea textarea:focus {
+        border-color: #c8c8c8 !important;
+        border-bottom: 1px solid $main_color !important;
+      }
     ")
   )
+
 
 # darkly spada theme ----------------------------------------------------------
 spada_dark_theme <- bs_theme(
@@ -286,3 +349,9 @@ spada_dark_theme <- bs_theme(
 
     ")
   )
+
+# themes ----------------------------------------------------------------------
+spada_themes <- list(
+  spada_theme = spada_theme,
+  spada_dark_theme = spada_dark_theme
+)

@@ -3,6 +3,9 @@
 spada_ui <- function(conf){
   tagList(
 
+    # favicon
+    tags$head(tags$link(rel = 'icon', href = 'spada/favicon.ico')),
+
     busyIndicatorOptions(
       spinner_type = 'bars2',
       spinner_color = main_color,
@@ -12,6 +15,8 @@ spada_ui <- function(conf){
     useBusyIndicators(),
 
     # css style for waiter screen ---------------------------------------------
+    tag_js_waiter_text,
+
     useWaiter(),
 
     waiter_screen,
@@ -71,6 +76,7 @@ spada_ui <- function(conf){
                    calculate_cols_ui('pE_calculate_cols')
                  ),
                  nav_panel('Convert', convert_cols_ui('pE_convert_cols')),
+                 nav_panel('Duplicates', duplicates_ui('pE_duplicates')),
                  nav_panel(
                    'Filter',
                    layout_column_wrap(
@@ -110,6 +116,9 @@ spada_ui <- function(conf){
         nav_panel('Descriptive Stats',
                   icon = bs_icon('list-columns-reverse'),
                   descriptive_stats_ui('pA_desc_stats')),
+        nav_panel('Correlation Matrix',
+                  icon = bs_icon('table'),
+                  cor_matrix_ui('pA_cor_matrix')),
         nav_panel('Correlation Test',
                   icon = bs_icon('magnet'),
                   correlation_ui('pA_correlation')),

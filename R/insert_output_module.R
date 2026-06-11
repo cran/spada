@@ -19,13 +19,26 @@ insert_output_server <- function(id, input_element, element_title = 'Title') {
           (input_element()$`_data` |> ncol()) > 250)) TRUE else FALSE
     })
 
+    # convert gt table to raw HTML for speed
+    new_element <- reactive({
+      req(input_element())
+
+      el <- input_element()
+
+      if(inherits(el, 'gt_tbl')) {
+        HTML(as_raw_html(el))
+      } else {
+        el
+      }
+    })
+
     # add output -----------------------------
     observe({
-      req(input_element())
+      req(new_element())
 
       showModal(
         modalDialog(
-          title = 'Add element to Output',
+          title = div(icon('plus'), 'Add element to Output'),
           size = 'l',
           tagList(
             if (is_large_data_frame()) {
@@ -85,7 +98,7 @@ insert_output_server <- function(id, input_element, element_title = 'Title') {
           class = 'micro-btn-cancel'
         )
 
-        output_card <- report_card(input$output_title, input$output_annot, input_element())
+        output_card <- report_card(input$output_title, input$output_annot, new_element())
 
         # delete event
         observe({
@@ -102,7 +115,7 @@ insert_output_server <- function(id, input_element, element_title = 'Title') {
           'id' = id,
           'title' = input$output_title,
           'annotation' = input$output_annot,
-          'element' = input_element(),
+          'element' = new_element(),
           'card' = output_card,
           'btn_x' = btn_x,
           'btn_e' = btn_e

@@ -143,6 +143,7 @@ factor_funs <- c(
 logical_funs <- c(
   'All True' = 'all',
   'Any True' = 'any',
+  'As Logical' = 'as.logical',
   'Is Logical' = 'is.logical',
   'Number of True' = 'sum_na',
   'Proportion of True' = 'mean_na'
@@ -189,9 +190,6 @@ basic_operations <- c(
 
   # DescTools package
   'Outlier',
-
-  # dplyr package
-  'if_else',
 
   #stats package
   'quantile',
@@ -362,6 +360,7 @@ waiter_screen <- tags$style(
     }
 
     .waiter-overlay .screen-title-box {
+      position: relative;
       width: 100vw;
       padding: 40px 0;
       border-radius: 0;
@@ -397,6 +396,14 @@ waiter_screen <- tags$style(
       letter-spacing: 4px;
     }
 
+    .waiter-overlay .screen-subtitle3 {
+      margin-top: 15px;
+      font-size: 16px;
+      font-weight: 100;
+      opacity: 0.85;
+      letter-spacing: 4px;
+    }
+
     .waiter-overlay .screen-spinner {
       margin: 30px auto 0;
       width: 60px;
@@ -425,12 +432,27 @@ waiter_screen <- tags$style(
       from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    .waiter-overlay .waiter-log {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Segoe UI', Ubuntu, system-ui;
+      margin-top: 15px;
+      font-size: 16px;
+      font-weight: 300;
+      letter-spacing: 2px;
+      height: 50px;
+      width: 400px;
+      text-align: center;
+      align-items: center;
+    }
   "
   )
 )
 
-# output_export_css ------------------------------------------------------------------
-output_export_css <- tags$head(tags$style(HTML(
+# spada_output_css ------------------------------------------------------------
+spada_output_css <- tags$head(tags$style(HTML(
   paste(
     "
       body {
@@ -440,15 +462,96 @@ output_export_css <- tags$head(tags$style(HTML(
       h2 {
         font-size: 1.5rem !important;
         margin-bottom: 12px ! important;
-        color:'", main_color, "' !important;
+        color: ", main_color, " !important;
         font-weight: 400 !important;
+      }
+
+      .toc-title { color: ", main_color, ";}
+
+      .toc ul{
+        list-style:none;
+        padding-left:0;
+        margin:0;
+      }
+
+      .toc li{
+        margin-bottom:4px;
+      }
+
+      .toc a{
+        display:block;
+        padding:8px 12px;
+
+        color:#444;
+        text-decoration:none;
+
+        border-radius:6px;
+
+        transition:
+          background-color .25s ease,
+          color .25s ease,
+          transform .25s ease,
+          box-shadow .25s ease;
+      }
+
+      .toc a:hover{
+        background:", main_color, ";
+        color:white;
+
+        transform:translateX(5px);
+
+        box-shadow:0 2px 8px rgba(13,110,253,.25);
       }
     "
   )
 )))
+
+# output header ---------------------------------------------------------------
+spada_output_header <- div(
+  style = '
+    padding: 20px 24px;
+
+    background: linear-gradient(
+      135deg,
+      #003452 0%,
+      #02517d 100%
+    );
+
+    border-radius: 4px;
+    color: #ffffff;
+    margin-bottom: 25px;
+  ',
+
+  div(
+    style = 'display: flex; flex-direction: column;',
+    tags$div(
+      'Spada Output',
+      style = ' font-size: 32px; font-weight: 450; letter-spacing: 4px;')
+  )
+)
 # ============================================================================.
 # ---------------------------- FUNCTIONS -------------------------------------
 # ============================================================================.
+# short name ------------------------------------------------------------------
+short_name <- function(name, max_size = 20){
+  stopifnot(is.character(name))
+  if(nchar(name) <= max_size) name else paste0(substr(name, 1, max_size - 3) , '...')
+}
+# spada_user_dir --------------------------------------------------------------
+spada_user_dir <- function(which){
+  dir <- normalizePath(R_user_dir('spada', which), winslash = '/', mustWork = F)
+
+  check_dir(dir)
+
+  return(dir)
+}
+
+# set theme -------------------------------------------------------------------
+set_spada_theme <- function(session, theme){
+
+  session$setCurrentTheme(spada_themes[[theme]])
+  session$userData$conf$theme <- theme
+}
 
 # load conf -------------------------------------------------------------------
 load_conf <- function(start_conf,
@@ -526,13 +629,13 @@ load_conf <- function(start_conf,
 }
 
 # generate 2 column table in html ---------------------------------------------
-gen_table2 <- function(element1, element2) {
+gen_table2 <- function(element1, element2, w1 = '50%', w2 = '50%') {
   div(
     tags$table(
       style = 'width: 95%',
       tags$tr(
-        tags$td(style = 'padding: 10px; width: 50%;', element1),
-        tags$td(style = 'padding: 10px; width: 50%;', element2)
+        tags$td(style = paste('padding: 10px; width:', w1, ';'), element1),
+        tags$td(style = paste('padding: 10px; width:', w2, ';'), element2)
       )
     )
   )
@@ -574,6 +677,63 @@ printable_report_card <- function(btns, card, id = NULL){
   )
 }
 
+# spada output ----------------------------------------------------------------
+spada_output <- function(output, header){
+  toc <- tags$div(
+    class = 'toc',
+    style = '
+    width:15vw;
+    min-width:220px;
+    height:100vh;
+    padding:16px 16px 16px 24px;
+    border-left:1px solid #ddd;
+    box-sizing:border-box;
+    overflow-y:auto;
+    position:sticky;
+    top:0;
+  ',
+
+    tags$h2(class = 'toc-title', 'Table of contents'),
+
+    tags$ul(
+      tagList(
+        tags$li(tags$a(href = '#home', 'Home')),
+
+        lapply(
+          output,
+          function(x) { tags$li(tags$a(href = paste0('#', x$id), x$title)) }
+        )
+      )
+    )
+  )
+
+  cards <- tags$div(
+    style = 'width:85vw; padding:24px; box-sizing:border-box;',
+
+    lapply(
+      output,
+      function(x) {
+        div(
+          id = x$id,
+          style = 'margin-bottom:32px;',
+          printable_report_card(NULL, x$card, NULL)
+        )
+
+      }
+    )
+  )
+
+  body_content <- tags$div(
+    style = 'display:flex; align-items:flex-start;',
+    cards,
+    toc
+  )
+
+  tags$html(
+    spada_output_css,
+    tags$body(div(id = 'home', header), body_content)
+  )
+}
 # generate output object ------------------------------------------------------
 gen_output <- function(element = div(h2('Element'))){
 
@@ -625,7 +785,7 @@ gen_element_id <- function(id = 'id', time_only = FALSE){
 show_allowed_op <- function(){
   showModal(
     modalDialog(
-      title = 'Allowed Operations',
+      title = div(icon('check'), 'Allowed Operations'),
       selectInput(
         inputId = 'allowed_op_selected',
         label   = 'List of operations',
@@ -658,6 +818,8 @@ test_dataset <- function(n_row = 1e3, n_col = 11){
     char_long_var = rep(paste(letters, collapse = ''), n_row),
     char_colors_var = rep(sample(colors(), n_row, replace = T)),
     date_var = Sys.Date() + rep(sample(-49:50, n_row, replace = T)),
+    datetime_var =
+      as.POSIXct(Sys.time()) + sample(0:(365 * 24 * 60 * 60), n_row, replace = TRUE),
     factor_var = as.factor(rep(sample(paste0('factor_', 1:10), n_row, replace = T))),
     num_nas_var = c(rep(NA, round(n_row/2)), rnorm(n_row - round(n_row/2))),
     int_nas_var = c(rep(NA, round(n_row/2)), sample(1:100, n_row - round(n_row/2), replace = T)),
@@ -855,6 +1017,16 @@ get_help_file <- function(pak, fun){
   )
 }
 
+# fun help modal --------------------------------------------------------------
+fun_help_modal <- function(pak, fun) {
+  showModal(modalDialog(
+    HTML(get_help_file(pak, fun)),
+    title = div(icon('circle-question'), paste('Help:', pak, '-', fun)),
+    easyClose = TRUE,
+    size = 'xl'
+  ))
+}
+
 # format decimals -------------------------------------------------------------
 f_dec <- function(x, dig = 0){
   if(is.numeric(x) && !is.na(x) |> all()){
@@ -918,8 +1090,16 @@ is_spada_df <- function(df){
 
 # is spada data table ---------------------------------------------------------
 is_spada_dt <- function(dt){
-  is_spada_df(dt) && is.data.table(dt)
+  is.data.table(dt) && is_spada_df(dt)
 }
+
+# test data format-------------------------------------------------------------
+test_data_format <- function(data){
+  is.list(data) &&
+    length(data) > 0 &&
+    (sapply(data, is_spada_df) |> all())
+}
+
 
 # running modal ---------------------------------------------------------------
 running_modal <- function(text = 'Running...'){
@@ -942,20 +1122,38 @@ remove_running_modal <- function(time = 0.7){
   removeModal()
 }
 
+# not spada df modal ----------------------------------------------------------
+abort_filter_modal <- function(){
+  showModal(modalDialog(
+    'The resultant dataset must be valid (nrow and ncol > 0)',
+    title = div(icon('triangle-exclamation'), 'Operation Aborted')
+  ))
+}
+
+# abort save session/output ---------------------------------------------------
+abort_run_local_modal <- function(msg = 'Spada must run locally'){
+  showModal(modalDialog(
+    msg,
+    title = div(icon('triangle-exclamation'), 'Operation Aborted'),
+    easyClose = T
+  ))
+}
+
 # show startup function -------------------------------------------------------
 show_startup_screen <- function() {
-  waiterShowOnLoad(
-    html = tagList(div(
+  waiterShowOnLoad(html = tagList(
+    div(
       class = 'screen-container',
-      div(class = 'screen-title-box',
+      div(
+        class = 'screen-title-box',
         div('Spada', class = 'screen-title'),
         div('a Shiny Package for Data Analysis', class = 'screen-subtitle2')
       ),
-      waiter_spinner
-      ),
-      waiter_right_foot
-    )
-  )
+      waiter_spinner,
+      div(id = 'spada_startup_text', class = 'waiter-log', 'Building UI')
+    ),
+    waiter_right_foot
+  ))
 }
 
 # exit screen function --------------------------------------------------------
@@ -965,23 +1163,25 @@ show_exit_screen <- function(save = TRUE) {
       if(save){
         tagList(
           div(
-            class = "screen-container",
+            class = 'screen-container',
             div(class = 'screen-title-box',
-            div("Spada is saving your work", class = "screen-subtitle"),
-            div("Please do not close this window", class = "screen-subtitle2")
+            div('Spada is saving your work', class = 'screen-subtitle'),
+            div('Please do not close this window', class = 'screen-subtitle2')
             ),
-            waiter_spinner
+            waiter_spinner,
+            div(id = 'spada_exit_text', class = 'waiter-log', '')
           ),
           waiter_right_foot
         )
       } else {
         html = tagList(
           div(
-            class = "screen-container",
+            class = 'screen-container',
             div(class = 'screen-title-box',
-              div("Closing Spada", class = "screen-subtitle")
+              div('Closing Spada', class = 'screen-subtitle')
             ),
-            waiter_spinner
+            waiter_spinner,
+            div(id = 'spada_exit_text', class = 'waiter-log', 'Saving conf')
           ),
           waiter_right_foot
         )
@@ -989,6 +1189,32 @@ show_exit_screen <- function(save = TRUE) {
     }
   )
 }
+
+# update startup text ---------------------------------------------------------
+update_waiter_text <- function(session, id, text) {
+  session$sendCustomMessage('update-text', list(id = id, text = text))
+}
+
+# update start up text-----------------------------------------------------------
+waiter_text <- "
+  Shiny.addCustomMessageHandler(
+    'update-text',
+    function(data){
+
+      const el = document.getElementById(data.id);
+
+      if(el){
+        const line = document.createElement('div');
+
+        line.innerText = data.text;
+
+        el.appendChild(line);
+      }
+    }
+  )
+"
+
+tag_js_waiter_text <- tags$head(tags$script(HTML(waiter_text)))
 
 # spada save function ---------------------------------------------------------
 spada_save <- function(dir, object, file_name){
@@ -1009,22 +1235,21 @@ spada_save <- function(dir, object, file_name){
 exit_with_save <- function(session){
 
   show_exit_screen()
-  t0 <- Sys.time()
-
+  update_waiter_text(session, 'spada_exit_text', 'Saving data')
   spada_save(session$userData$conf$data_dir,
              session$userData$dt$dt,
              'data.qs2')
-
+  Sys.sleep(0.3)
+  update_waiter_text(session, 'spada_exit_text', 'Saving output')
   spada_save(session$userData$conf$data_dir,
              session$userData$out$elements,
              'output.qs2')
-
+  Sys.sleep(0.4)
+  update_waiter_text(session, 'spada_exit_text', 'Saving conf')
   spada_save(session$userData$conf$conf_dir,
              reactiveValuesToList(session$userData$conf),
              'conf.qs2')
-
-  t_diff <- Sys.time() - t0
-  if(t_diff < 5) Sys.sleep(5 - t_diff)
+  Sys.sleep(1)
   session$sendCustomMessage(type = 'closeWindow', message = 'message')
   if(session$userData$run_local) stopApp()
 }
@@ -1161,20 +1386,12 @@ test_output_format <- function(output){
          all(sapply(output, \(x){ 'character' %in% class(x$id)})) &&
            all(sapply(output, \(x){ 'character' %in% class(x$title) })) &&
            all(sapply(output, \(x){ 'character' %in% class(x$annotation) })) &&
-           all(sapply(output, \(x){ any(c('gt_tbl', 'shiny.tag') %in% class(x$element)) })) &&
+           all(sapply(output, \(x){ any(c('gt_tbl', 'html', 'shiny.tag') %in% class(x$element)) })) &&
            all(sapply(output, \(x){ 'shiny.tag' %in% class(x$card) })) &&
            all(sapply(output, \(x){ 'shiny.tag' %in% class(x$btn_x) })) &&
            all(sapply(output, \(x){ 'shiny.tag' %in% class(x$btn_e) }))
        )
     )
-}
-
-# test data format-------------------------------------------------------------
-test_data_format <- function(data){
-  is.list(data) &&
-     length(data) > 0 &&
-     (sapply(data, is.data.frame) |> all()) &&
-     (all(sapply(data, nrow) > 0))
 }
 
 # check existence of directory ------------------------------------------------
@@ -1458,7 +1675,8 @@ spada_plot <- function(
     line_type = 1,
     mean_value = NULL,
     sd_value = NULL,
-    sample_limit = 1e5
+    sample_limit = 1e5,
+    na_rm = TRUE
   ){
 
   if(nrow(df) > sample_limit){
@@ -1473,7 +1691,8 @@ spada_plot <- function(
       geom_histogram(
         bins = bins,
         fill = fill_color,
-        color = '#000000'
+        color = '#000000',
+        na.rm = na_rm
       ) +
       geom_vline(xintercept = vertical_line, color = line_color, linetype = line_type) +
       labs(x = xlab, y = ylab, title = title) +
@@ -1489,7 +1708,8 @@ spada_plot <- function(
       geom_histogram(aes(y = after_stat(density)),
                      bins = bins,
                      fill = fill_color,
-                     color = 'black') +
+                     color = 'black',
+                     na.rm = na_rm) +
       stat_function(fun = dnorm,
                     args = list(mean = mean_value,
                                 sd = sd_value),
@@ -1507,8 +1727,8 @@ spada_plot <- function(
   } else if (type == 'boxplot'){
 
     ggplot(data = df, aes(x = .data[[xvar]])) +
-      stat_boxplot(geom = 'errorbar', width = 0.3) +
-      geom_boxplot(fill = fill_color) +
+      stat_boxplot(geom = 'errorbar', width = 0.3, na.rm = na_rm) +
+      geom_boxplot(fill = fill_color, na.rm = na_rm) +
       ylim(-1.2, 1.2) +
       geom_vline(xintercept = vertical_line, color = line_color, linetype = line_type) +
       labs(x = '', y = '') +
@@ -1523,7 +1743,7 @@ spada_plot <- function(
   } else if(type == 'dots'){
 
     ggplot(data = df, aes(x = .data[[xvar]], y = .data[[yvar]])) +
-      geom_point(shape = point_shape, color = fill_color) +
+      geom_point(shape = point_shape, color = fill_color, na.rm = na_rm) +
       geom_hline(yintercept = vertical_line, color = line_color, linetype = line_type) +
       labs(x = xlab, y = ylab) +
       theme_classic() +
@@ -1535,7 +1755,7 @@ spada_plot <- function(
   } else if (type == 'barplot'){
 
     ggplot(data = df, aes(x = factor(.data[[xvar]]))) +
-      geom_bar(fill = fill_color) +
+      geom_bar(fill = fill_color, na.rm = na_rm) +
       labs(x = xlab, y = ylab) +
       theme_classic() +
       theme(axis.text.x = element_text(size = 14),
@@ -1546,8 +1766,8 @@ spada_plot <- function(
   } else if (type == 'boxplot_group'){
 
     ggplot(data = df, aes(x = .data[[xvar]], y = .data[[yvar]], fill = .data[[xvar]])) +
-      stat_boxplot(geom = 'errorbar', width = 0.3) +
-      geom_boxplot(orientation = 'x') +
+      stat_boxplot(geom = 'errorbar', width = 0.3, na.rm = na_rm) +
+      geom_boxplot(orientation = 'x', na.rm = na_rm) +
       geom_hline(yintercept = vertical_line,
                  color = line_color) +
       coord_flip() +
@@ -1564,7 +1784,7 @@ spada_plot <- function(
   } else if (type == 'scatter'){
 
     ggplot(data = df, aes(x = .data[[xvar]], y = .data[[yvar]])) +
-      geom_point(color = fill_color, shape = point_shape) +
+      geom_point(color = fill_color, shape = point_shape, na.rm = na_rm) +
       labs(title = title,
            x = xlab, y = ylab) +
       theme_classic() +
@@ -1576,8 +1796,8 @@ spada_plot <- function(
       )
   } else if (type == 'qq_plot'){
     ggplot(data = df, aes(sample = .data[[xvar]])) +
-      stat_qq(color = fill_color) +
-      stat_qq_line(color = line_color) +
+      stat_qq(color = fill_color, na.rm = na_rm) +
+      stat_qq_line(color = line_color, na.rm = na_rm) +
       labs(title = title, x = xlab, y = ylab) +
       theme_classic() +
       theme(axis.text.x = element_text(size = 14),
@@ -1587,6 +1807,18 @@ spada_plot <- function(
             plot.title = element_text(color = title_color, size = 16, face = 'bold')
       )
   }
+}
+
+# plotTag with attributes -----------------------------------------------------
+plot_tag <- function(plot, w = 900, h = 300){
+  plotTag(
+    plot,
+    '',
+    width = w,
+    height = h,
+    suppressSize = 'xy',
+    attribs = list(style = 'max-width:90%; height:auto;')
+  )
 }
 
 # status row for restore session ----------------------------------------------
@@ -1626,19 +1858,17 @@ display_restore_status <- function(session_restore_status, btn_ok){
 
   # show modal
   showModal(modalDialog(
-    title = div(
-      h1(bs_icon('database-up', size = '55px',
-                 style = 'margin-right: 8px; color:#02517d'),
-        'Session Status'
-      )
-    ),
+    title = div(h2(
+      bs_icon('database-up', size = '40px',
+              style = 'margin-right: 8px; color:#FFFFFF'),
+      'Session Status'
+    )),
     div(style = 'padding:12px; border-radius:0px;', list_check_restore),
     size = 'l',
     easyClose = T,
     footer = div(style = 'text-align:right;', btn_ok)
 
   ))
-
 }
 
 # summarise dataset -----------------------------------------------------------
@@ -1854,6 +2084,10 @@ f_num <- function(x, big = ',', dec = '.', thousand = 'K',
   }
 }
 
+f_int <- function(int){
+  formatC(int, format = 'd', big.mark = ',', digits = 0)
+}
+
 gt_info <- function(df, df_name){
   stopifnot(is.data.frame(df))
 
@@ -1922,11 +2156,23 @@ is_date <- function(x){
   inherits(x, c('Date', 'POSIXt', 'POSIXct', 'POSIXlt'))
 }
 
+is_categorical <- function(x) {
+  is.character(x) || is.factor(x) || is.logical(x)
+}
+
 is_valid_name <- function(x){
   x == make.names(x)
 }
 
-# wrapper functions frm collapse package for speed -------
+is_name_available <- function(n, names){
+  is_valid_name(n) && n %notin% names
+}
+
+is_var_available <- function(var_name, df){
+  is_valid_name(var_name) && var_name %notin% names(df)
+}
+
+# wrapper functions from collapse package for speed ---------------------------
 first_na <- function(x){
   ffirst(x, na.rm = F)
 }

@@ -127,13 +127,12 @@ test_that('Test render df_info UI', {
       req(session$userData$dt$act_meta())
 
       list(
-        'row_col' = paste(session$userData$dt$act_meta() |>
-                            pull(rows) |> head(1) |> f_num(dig = 1),
-                          '/',
-                          session$userData$dt$act_meta() |>
-                            pull(cols) |> head(1) |> f_num()),
-        'col_nas' = session$userData$dt$act_meta() |>
-          filter(n_nas > 0) |> nrow(),
+        'row_col' = paste(
+          f_int(session$userData$dt$act_meta()[['rows']][1]),
+          '/',
+          f_int(session$userData$dt$act_meta()[['cols']][1])
+        ),
+        'col_nas' = session$userData$dt$act_meta()[n_nas > 0, ] |> nrow(),
         'size' = (object.size(get_act_dt(session)) / 2^20) |>
           as.numeric() |> round(2)
       )
@@ -143,7 +142,7 @@ test_that('Test render df_info UI', {
     expect_true(grepl('Rows/Columns:', output$df_info$html))
     expect_true(grepl("Columns with NA's:", output$df_info$html))
 
-    expect_equal(output$row_col, '5.0 / 2')
+    expect_equal(output$row_col, '5 / 2')
     expect_equal(output$col_nas, '1')
   })
 })
@@ -201,3 +200,22 @@ test_that('Test renders dataset preview second dataset', {
   })
 })
 
+# test dark mode --------------------------------------------------------------
+test_that('Test dark mode', {
+  testServer(sidebar_server, args = list(app_session = NULL), {
+    session$userData$conf <- reactiveValues(theme = 'spada_theme')
+    session$userData$dt <- reactiveValues(
+      dt = list(iris = iris),
+      act_name = 'iris'
+    )
+    session$userData$dt_names <- reactive( names(session$userData$dt$dt) )
+
+    session$setInputs(dark_mode = FALSE)
+
+    expect_equal(session$userData$conf$theme, 'spada_theme')
+
+    session$setInputs(dark_mode = TRUE)
+
+    expect_equal(session$userData$conf$theme, 'spada_dark_theme')
+  })
+})

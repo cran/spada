@@ -82,7 +82,7 @@ correlation_server <- function(id) {
     var_analysis <- reactive({
       df_names <- df_active() |> names()
 
-      var_analysis <- session$userData$dt$act_meta() |> filter(perc_nas != 1) |> pull(var)
+      var_analysis <- session$userData$dt$act_meta()[perc_nas != 1, var]
 
       df_names[df_names %in% var_analysis]
     })
@@ -167,20 +167,18 @@ correlation_server <- function(id) {
     # staticards --------------------------------------------------------------
     cor_staticards <- reactive({
       req(cor_results_gt())
+
+      idx_cor <- cor_test$results$results %in% c(
+        'estimate.cor', 'estimate.tau', 'estimate.rho'
+      )
+      est_cor <- cor_test$results$values[idx_cor]
+
+      indx_p <- cor_test$results$results %in% c('p.value')
+      p_value <-  cor_test$results$values[indx_p]
+
       tagList(
-        stati_card(cor_test$results |>
-                     filter(results %in% c('estimate.cor', 'estimate.tau',
-                                           'estimate.rho')) |>
-                     pull(values) |>
-                     as.numeric() |>
-                     f_num(dig = 3),
-                   'Correlation'),
-        stati_card(cor_test$results |>
-                     filter(results %in% c('p.value')) |>
-                     pull(values) |>
-                     as.numeric() |>
-                     f_num(dig = 3),
-                   'p value')
+        stati_card(f_num(as.numeric(est_cor), dig = 3), 'Correlation'),
+        stati_card(f_num(as.numeric(p_value), dig = 3), 'p value')
       )
     })
 
@@ -205,7 +203,7 @@ correlation_server <- function(id) {
           xlab = sel_var1,
           ylab = sel_var2,
           fill_color = plot_fill_color,
-          point_shape = if (sample_limit > 1e4 && nrow(df) > 1e4) '.' else 20,
+          point_shape = if(sample_limit > 1e4 && nrow(df) > 1e4) '.' else 20,
           sample_limit = sample_limit
         )
       },
@@ -239,16 +237,13 @@ correlation_server <- function(id) {
     # insert scatter to output ------------------------------------------------
     insert_output_server(
       'insert_scatter',
-      reactive(plotTag(scatter_plot(), '', width = 1000, height = 500)),
+      reactive(plot_tag(scatter_plot())),
       'Scatter Plot'
     )
 
     # help events -------------------------------------------------------------
     observe({
-      showModal(modalDialog(
-        HTML(get_help_file('stats', 'cor.test')),
-        easyClose = TRUE, size = 'xl'
-      ))
+      fun_help_modal('stats', 'cor.test')
     }) |> bindEvent(input$btn_help_cor)
 
   })

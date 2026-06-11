@@ -105,7 +105,7 @@ z_test_server <- function(id) {
     var_analysis <- reactive({
       df_names <- df_active() |> names()
 
-      var_analysis <- session$userData$dt$act_meta() |> filter(perc_nas != 1) |> pull(var)
+      var_analysis <- session$userData$dt$act_meta()[perc_nas != 1, var]
 
       df_names[df_names %in% var_analysis]
     })
@@ -201,8 +201,10 @@ z_test_server <- function(id) {
       'ztest_insert_output',
       reactive(
         gen_table2(
-          plotTag(ztest_plot()(), '', width = 1000, height = 500),
-          ztest_results_gt()
+          plot_tag(ztest_plot()(), w = 600, h = 300),
+          ztest_results_gt(),
+          '75%',
+          '25%'
         )
       ),
       'Z Test'
@@ -223,16 +225,17 @@ z_test_server <- function(id) {
       req(ztest$results)
       req(ztest$confidence)
 
+      idx_alt <- ztest$results$results %in% c('alternative')
+      alt <- ztest$results$values[idx_alt]
+
+      idx_z <- ztest$results$results %in% c('statistic.z')
+      z_value <- ztest$results$values[idx_z]
+
       function(){
         plot_z_test(
           confidence = ztest$confidence,
-          test_type = ztest$results |>
-            filter(results == 'alternative') |>
-            pull(values),
-          z_value = ztest$results |>
-            filter(results == 'statistic.z') |>
-            pull(values) |>
-            as.numeric()
+          test_type = alt,
+          z_value = z_value |> as.numeric()
         )
       }
     })
@@ -248,28 +251,22 @@ z_test_server <- function(id) {
     # staticards --------------------------------------------------------------
     output$conditional_staticard_ztest <- renderUI({
       req(ztest_results_gt())
+
+      idx_z <- ztest$results$results %in% c('statistic.z')
+      z_value <- ztest$results$values[idx_z]
+
+      indx_p <- ztest$results$results %in% c('p.value')
+      p_value <- ztest$results$values[indx_p]
+
       tagList(
-        stati_card(ztest$results |>
-                   filter(results %in% c('statistic.z')) |>
-                   pull(values) |>
-                   as.numeric() |>
-                   f_num(dig = 3),
-                   'Z value'),
-        stati_card(ztest$results |>
-                   filter(results %in% c('p.value')) |>
-                   pull(values) |>
-                   as.numeric() |>
-                   f_num(dig = 3),
-                   'p value')
+        stati_card(f_num(as.numeric(z_value), dig = 3), 'Z value'),
+        stati_card(f_num(as.numeric(p_value), dig = 3), 'p value')
       )
     })
 
     # help modal --------------------------------------------------------------
     observe({
-      showModal(modalDialog(
-        HTML(get_help_file('DescTools', 'ZTest')),
-        easyClose = TRUE, size = 'xl'
-      ))
+      fun_help_modal('DescTools', 'ZTest')
     }) |> bindEvent(input$btn_help_ztest)
 
     # histogram ---------------------------------------------------------------
@@ -337,9 +334,7 @@ z_test_server <- function(id) {
     # insert histogram to output ----------------------------------------------
     insert_output_server(
       'ztest_insert_output_hist',
-      reactive(
-        plotTag(ztest_hist(), '', width = 1000, height = 500)
-      ),
+      reactive(plot_tag(ztest_hist())),
       'Histogram'
     )
 

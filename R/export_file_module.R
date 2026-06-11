@@ -7,7 +7,7 @@ export_file_ui <- function(id) {
         fluidRow(
           column(3, textInput(ns('file_name'), 'File name', value = 'dataset')),
           column(3, radioButtons(ns('radio_format'), 'File format',
-                                 c('csv', 'qs2', 'RDS', 'sav'), inline = T))
+                                 c('csv', 'qs2', 'RDS', 'sav', 'xlsx'), inline = T))
         ),
         conditionalPanel(
           condition = "input.radio_format == 'csv'", ns = ns,
@@ -62,9 +62,13 @@ export_file_ui <- function(id) {
 # server ----------------------------------------------------------------------
 export_file_server <- function(id) {
   moduleServer(id, function(input, output, session) {
+
+    act_dt <- reactive({ get_act_dt(session) })
+
     output$down_handler <- downloadHandler(
 
       filename = function() {
+
         paste0(
           input$file_name,
           switch(
@@ -74,14 +78,17 @@ export_file_server <- function(id) {
             'RDS' = '.RDS',
             'RDS Compressed' = '.RDS',
             'sav' = '.sav',
+            'xlsx' = '.xlsx',
             ''
           )
         )
-
       },
       content = function(file) {
+
+        dt <- act_dt()
+
         if(input$radio_format == 'csv'){
-          fwrite(get_act_dt(session), file,
+          fwrite(dt, file,
                  row.names = input$x_rownames,
                  sep = input$radio_separator,
                  dec = input$radio_decimal,
@@ -89,11 +96,34 @@ export_file_server <- function(id) {
                  scipen = as.integer(input$radio_scientific)
           )
         } else if (input$radio_format == 'qs2'){
-          qs_save(get_act_dt(session), file)
+          qs_save(dt, file)
         } else if (input$radio_format == 'RDS'){
-          saveRDS(get_act_dt(session), file, compress = input$checkbox_rds_compress)
+          saveRDS(dt, file, compress = input$checkbox_rds_compress)
         } else if (input$radio_format == 'sav') {
-          write_sav(get_act_dt(session), file, compress = input$radio_sav_compress)
+          write_sav(dt, file, compress = input$radio_sav_compress)
+        } else if (input$radio_format == 'xlsx') {
+
+          if (nrow(dt) <= 1048575 && ncol(dt) <= 16384) {
+            write_xlsx(dt, file, format_headers = F)
+          } else {
+
+            rows <- min(1048575, nrow(dt))
+            cols <- min(16384, ncol(dt))
+            showModal(
+              modalDialog(
+                title = 'xlsx Limits',
+                paste(
+                  'xlsx format supports 1,048,576 rows and 16,384 columns.',
+                  'Exporting', f_int(rows), 'rows (and the headers) and',
+                  f_int(cols), 'columns.'
+                ),
+                easyClose = TRUE,
+                footer = modalButton('Dismiss')
+              )
+            )
+
+            write_xlsx(dt[1:rows, 1:cols], file, format_headers = F)
+          }
         }
       }
     )

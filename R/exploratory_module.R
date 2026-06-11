@@ -75,6 +75,7 @@ exploratory_ui <- function(id) {
             )
           ),
           nav_panel('Table', full_screen = T, table_values_ui(ns('table_values'))),
+          nav_panel('Frequencies', full_screen = T, frequencies_ui(ns('frequencies'))),
           nav_panel(
             'Linear Model',
             full_screen = T,
@@ -134,7 +135,7 @@ exploratory_ui <- function(id) {
 }
 
 # server ----------------------------------------------------------------------
-exploratory_server <- function(id, output_report) {
+exploratory_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -354,6 +355,9 @@ exploratory_server <- function(id, output_report) {
                         reactive(input$sel_vars),
                         reactive(input$sel_vars2))
 
+    # frequencies -------------------------------------------------------------
+    frequencies_server('frequencies', var, reactive(input$sel_vars))
+
     # linear model ------------------------------------------------------------
     linear_model <- reactiveValues(
       model = NULL,
@@ -367,7 +371,7 @@ exploratory_server <- function(id, output_report) {
       if(!is.numeric(var())){
         msg('The Dependent variable must be numeric', 2.5)
       } else if (input$sel_vars == input$sel_vars2) {
-        msg('Choose diferent variables for X and Y.', 2.5)
+        msg('Select diferent variables for X and Y.', 2.5)
       } else {
         linear_model$y_name <- input$sel_vars
         linear_model$x_name <- input$sel_vars2
@@ -522,14 +526,14 @@ exploratory_server <- function(id, output_report) {
     # insert dist plot to output ----------------------------------------------
     insert_output_server(
       'insert_dist_plot',
-      reactive(plotTag(dist_plot(), '', width = 1000, height = 500)),
+      reactive(plot_tag(dist_plot())),
       'Exploratory Plot'
     )
 
     # insert scatter to output ------------------------------------------------
     insert_output_server(
       'insert_scatter',
-      reactive(plotTag(scatter_plot(), '', width = 1000, height = 500)),
+      reactive(plot_tag(scatter_plot())),
       'Scatter Plot'
     )
 
@@ -543,7 +547,7 @@ exploratory_server <- function(id, output_report) {
     # insert lm residual plot to output ---------------------------------------
     insert_output_server(
       'insert_lm_resid_plot',
-      reactive(plotTag(lm_resid_plot(), '', width = 1000, height = 500)),
+      reactive(plot_tag(lm_resid_plot())),
       'Linear Model - Residuals Plot'
     )
 

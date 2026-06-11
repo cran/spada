@@ -10,9 +10,69 @@ editor_options:
 
 [0.2.0 Version Milestone](https://github.com/lgschuck/spada/milestone/2)
 
-# Spada 0.1.5
+# Spada 0.1.6
 
-Version for **CRAN submission** (based on 0.1.4).
+CRAN update submission: 2026-06-10
+
+### Improvements
+
+1 - New **duplicates** module: allows identify and drop duplicate cases ([#20](https://github.com/lgschuck/spada/issues/20))
+
+2 - New **xlsx** format (from **writexl** package) in **export_file** module ([#73](https://github.com/lgschuck/spada/issues/73))
+
+3 - New **cor_matrix** module ([#77](https://github.com/lgschuck/spada/issues/77))
+
+4 - New **Frequencies** module: new Frequencies table inside Exploratory module
+
+5 - Change **updateSelectizeInput** for updateSelectInput when erroneously used with selecInput
+
+6 - **Save/import** with run_local = FALSE: now a modal warns that is not possible to save/import (session and output)
+
+7 - **Exit** with run_local = FALSE: when run_local = FALSE the app closes witout saving (data, output and conf)
+
+8 - **Restore sesison** with run_local = FALSE: now only restore previous session if run_local = TRUE
+
+9 - New **plot_tag** function: better control in how plots images are inserted in the output
+
+10 - **Table values** module: now uses collapse::qtab instead of base::table for speed improvement
+
+11 - **Removed sass** package as dependencie
+
+12 - **gt tables x Output**: gt tables are inserted as raw_html for speed improvement
+
+13 - **dplyr**: removed as dependencie (only filter and pull functions were used)
+
+#### Visuals 
+
+1 - New switch for activate **Dark mode** (Sidebar module)
+
+2 - **Messages** on waiter: new messages on startup and exit screens
+
+3 - New **Output layout**: new header, links and table of contents in exported HTML output file
+
+4 - New Spada **favicon**
+
+5 - New **style in modal header** and new icons in modal titles
+
+6 - **Inputs**: new bottom border for inputs in spada theme (selectInputs, textArea)
+
+7 - **Large names in inputs**: new css breaking long names to a new line in selectInputs
+
+### Bug fixes
+
+1 - **Edit > Convert**: convert even with no variable selected ([#71](https://github.com/lgschuck/spada/issues/71))
+
+2 - **Filter Rows**: filter with no variable selected ([#74](https://github.com/lgschuck/spada/issues/74))
+
+3 - **Calculate**: apply function even without select a variable ([#75](https://github.com/lgschuck/spada/issues/75))
+
+4 - **Exploratory module**: histogram with NA values ([#69](https://github.com/lgschuck/spada/issues/69))
+
+5 - **Nested data.table** in data.qs2 (saved session) ([#78](https://github.com/lgschuck/spada/issues/78))
+
+6 - **Change non active dataset name**: error in metadata names ([#79](https://github.com/lgschuck/spada/issues/79))
+
+# Spada 0.1.5
 
 ### Fixes
 

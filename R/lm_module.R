@@ -51,7 +51,7 @@ lm_server <- function(id) {
 	  df <- reactive(get_act_dt(session))
 
     var_analysis <- reactive({
-      session$userData$dt$act_meta() |> filter(perc_nas != 1) |> pull(var)
+      session$userData$dt$act_meta()[perc_nas != 1, var]
     })
 
     yvar <- reactive({
@@ -128,10 +128,7 @@ lm_server <- function(id) {
 
     # help events -------------------------------------------------------------
     observe({
-      showModal(modalDialog(
-        HTML(get_help_file('stats', 'lm')),
-        easyClose = TRUE, size = 'xl'
-      ))
+      fun_help_modal('stats', 'lm')
     }) |> bindEvent(input$btn_help_lm)
 
     # insert model to output --------------------------------------------------

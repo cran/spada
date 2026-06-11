@@ -7,11 +7,11 @@ calculate_cols_ui <- function(id) {
     card(
       card_header('Apply Function', class = 'mini-header'),
       card_body(
-        selectInput(ns('vars_sel'), 'Variable', NULL),
+        selectInput(ns('vars_sel'), 'Variable', ''),
 
-        selectInput(ns('fun'), 'Choose a function', character(0)),
+        selectInput(ns('fun'), 'Select a function', ''),
         textInput(ns('txt_new_name_fun'), 'New variable name'),
-        selectizeInput(ns('vars_groupby_fun'), 'Group by', NULL,
+        selectizeInput(ns('vars_groupby_fun'), 'Group by', '',
                        multiple = T,
                        options = list(plugins = list('remove_button', 'clear_button')))
 
@@ -28,7 +28,7 @@ calculate_cols_ui <- function(id) {
         column(4, btn_task(ns('btn_allowed_operations'), 'Show Allowed Operations')),
         selectizeInput(ns('vars_groupby_free'),
                        'Group By',
-                       choices = NULL,
+                       choices = '',
                        multiple = T,
                        options = list(plugins = list('remove_button', 'clear_button'))
         )
@@ -102,15 +102,14 @@ calculate_cols_server <- function(id) {
     # apply function events ---------------------------------------------------
     observe({
       if(!isTruthy(input$vars_sel)) {
-        msg('Select at least one variable')
+        msg('Select a variable')
       } else if(!isTruthy(input$fun)){
         msg('Select a function')
       } else if(input$fun %in% dangerous_operations ||
                 input$fun %notin% allowed_operations){
         msg('Function is not allowed')
       } else {
-        if(is_valid_name(input$txt_new_name_fun) &&
-            input$txt_new_name_fun %notin% df_names()) {
+        if(is_name_available(input$txt_new_name_fun, df_names())) {
 
           running_modal()
 
@@ -151,8 +150,7 @@ calculate_cols_server <- function(id) {
     # calculate var -----------------------------------------------------------
     observe({
 
-      if(is_valid_name(input$txt_new_name_free) &&
-         input$txt_new_name_free %notin% df_names()){
+      if(is_name_available(input$txt_new_name_free, df_names())){
 
         # parse code ----------------------------------------------------------
         parsed_code <- try(parse_expr(input$txt_code_input), silent = T)

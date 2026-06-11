@@ -7,13 +7,13 @@ summarise_ui <- function(id) {
     card_header('Summarise', class = 'mini-header'),
     card_body(
       selectizeInput(
-        ns('vars_sel'), 'Variables', NULL,
+        ns('vars_sel'), 'Variables', '',
         multiple = T,
         options = list(plugins = list('remove_button', 'clear_button')),
         width = '80%'
       ),
       selectInput(ns('fun_sel'), 'Function', summarise_functions),
-      radioButtons(ns('radio_overwrite'), NULL,
+      radioButtons(ns('radio_overwrite'), 'Dataset',
                    c('New' = 'new', 'Overwrite' = 'overwrite'), inline = T),
       conditionalPanel(
         condition = "input.radio_overwrite == 'new'", ns = ns,
@@ -47,8 +47,7 @@ summarise_server <- function(id) {
         msg('Insert at least one variable')
         return()
       } else if (input$radio_overwrite == 'new' &&
-          (!is_valid_name(input$txt_new_dt_name) ||
-             input$txt_new_dt_name %in% session$userData$dt_names()))
+                 !is_name_available(input$txt_new_dt_name, session$userData$dt_names()))
       {
         msg_error('New name is not valid or already in use')
         return()

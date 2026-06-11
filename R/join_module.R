@@ -255,12 +255,12 @@ join_server <- function(id) {
 
       # check len of selected variables
       } else if(length(vars_dt1) != length(vars_dt2)){
-        msg('The number of selected variables must has the same for both datasets', 4)
+        msg('The number of selected variables must be the same for both datasets', 4)
         return()
 
       # check new dt name
-      } else if (radio == 'new' && (!is_valid_name(new_dt_name) ||
-                                    new_dt_name %in% session$userData$dt_names()))
+      } else if (radio == 'new' &&
+                 (!is_name_available(new_dt_name, session$userData$dt_names())))
       {
         msg_error('New name is not valid or already in use')
         return()

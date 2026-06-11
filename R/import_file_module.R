@@ -9,7 +9,7 @@ import_file_ui <- function(id) {
           column(3, textInput(ns('dataset_name'), 'Dataset name', 'dataset')),
           column(3, radioButtons(ns('radio_file_ext'), 'File format',
                                         file_extensions, inline = T)),
-          column(3, fileInput(ns('file'), 'Choose a File')),
+          column(6, fileInput(ns('file'), 'Select a File', width = '80%')),
         ),
         conditionalPanel(
           condition = "input.radio_file_ext == 'csv'", ns = ns,
@@ -73,8 +73,7 @@ import_file_server <- function(id) {
         return()
       }
 
-      if (!is_valid_name(input$dataset_name) ||
-          input$dataset_name %in% session$userData$dt_names()) {
+      if (!is_name_available(input$dataset_name, session$userData$dt_names())){
         msg_error('Name invalid or already in use')
         return()
       }
@@ -154,7 +153,7 @@ import_file_server <- function(id) {
 
           showModal(modalDialog(
             size = 'xl',
-            title = 'Preview Raw File',
+            title = div(icon('magnifying-glass'), 'Preview Raw File'),
             HTML(paste(preview_data, collapse = '<br>'))
           ))
 

@@ -12,11 +12,18 @@ test_that('Test currernt type/class', {
     session$setInputs(vars_sel = 'Sepal.Length')
 
     expect_equal(
-      paste('Type: [', iris$Sepal.Length |> typeof(), '] |',
-            'Class: [',
-            paste(iris$Sepal.Length |> class(), collapse = '/'),
-            ']'),
-      current_format())
+      paste(
+        'Type: [', iris$Sepal.Length |> typeof(), '] | Class: [',
+        paste(iris$Sepal.Length |> class(), collapse = '/'),
+        ']'
+      ),
+      paste(
+        'Type: [', get_act_dt(session)[[input$vars_sel]] |> typeof(),
+        '] | Class: [',
+        paste(get_act_dt(session)[[input$vars_sel]] |> class(), collapse = '/'),
+        ']'
+      )
+    )
   })
 })
 
@@ -53,11 +60,13 @@ test_that('Test Preview dataframe after variable and format selection', {
     expect_true(is.data.frame(preview_df()))
     expect_true(ncol(preview_df()) == 2)
     expect_true(nrow(preview_df()) == 8)
-    expect_equal(preview_df(),
-                 data.frame(Species = iris[preview_sample(), 5],
-                            preview = iris[preview_sample(), 5] |>
-                              as.character())
-                 |> as.data.table()
+
+    expect_equal(
+      preview_df(),
+      data.table(
+        Species = iris[preview_sample(), ]$Species,
+        preview = iris[preview_sample(), ]$Species |> as.character()
+      )
     )
   })
 })
@@ -80,7 +89,7 @@ test_that('Test Conversion applies when button clicked', {
     session$userData$data_changed <- reactiveVal(0)
     session$setInputs(vars_sel = '', sel_format = '', btn_apply = 1)
 
-    expect_equal(last_msg, 'Choose a variable and a new format')
+    expect_equal(last_msg, 'Select a variable and a new format')
 
     original_class <- class(get_act_dt(session)[['Species']])
 
@@ -95,6 +104,21 @@ test_that('Test Conversion applies when button clicked', {
     expect_equal(get_act_dt(session)[['Species']] |> class(), 'character')
     expect_equal(get_act_dt(session) |> class(), c('data.table', 'data.frame'))
     expect_equal(last_msg, 'Remove modal')
+
+    # test no selection after first operation -----
+    last_msg <- NULL
+    session$setInputs(vars_sel = character(0),
+                      sel_format = 'as.Date',
+                      btn_apply = 3)
+
+    expect_equal(last_msg, 'Select a variable and a new format')
+
+    last_msg <- NULL
+    session$setInputs(vars_sel = 'Species',
+                      sel_format = character(0),
+                      btn_apply = 4)
+
+    expect_equal(last_msg, 'Select a variable and a new format')
   })
 })
 

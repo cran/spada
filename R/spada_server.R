@@ -11,7 +11,7 @@ spada_server <- function(datasets, conf, run_local = TRUE){
       daemons(0)
     })
 
-    session$onFlushed(function() {
+    session$onFlushed(function(){
       waiter_hide()
     })
 
@@ -22,7 +22,7 @@ spada_server <- function(datasets, conf, run_local = TRUE){
 
     # conf values -------------------------------------------------------------
     session$userData$conf <- reactiveValues(
-      empty_datasets = conf$empty_datasets,
+      no_input_data = conf$no_input_data,
       conf_dir = conf$conf_dir,
       data_dir = conf$data_dir,
       theme = conf$theme,
@@ -35,7 +35,8 @@ spada_server <- function(datasets, conf, run_local = TRUE){
       plot_fill_color = conf$plot_fill_color,
       plot_line_color = conf$plot_line_color,
       plot_title_color = conf$plot_title_color,
-      plot_limit = conf$plot_limit
+      plot_limit = conf$plot_limit,
+      run_local = run_local
     )
 
     # restore session module --------------------------------------------------
@@ -63,13 +64,7 @@ spada_server <- function(datasets, conf, run_local = TRUE){
       names(session$userData$dt$dt)
     })
 
-    output$dt_act_name <- renderText(
-      if(nchar(session$userData$dt$act_name) <= 20){
-        session$userData$dt$act_name
-      } else {
-        paste0(substr(session$userData$dt$act_name, 1, 17) , '...')
-      }
-    )
+    output$dt_act_name <- renderText(short_name(session$userData$dt$act_name))
 
     # datasets metadata -------------------------------------------------------
     observe({
@@ -146,15 +141,15 @@ spada_server <- function(datasets, conf, run_local = TRUE){
     session$userData$dt$act_mini_meta <- reactive({
       req(session$userData$dt$act_meta())
 
+      dt_act_meta <- session$userData$dt$act_meta()
+
       list(
         'row_col' = paste(
-          session$userData$dt$act_meta() |>
-            pull(rows) |> head(1) |> f_num(dig = 1),
+          f_int(dt_act_meta[['rows']][1]),
           '/',
-          session$userData$dt$act_meta() |>
-            pull(cols) |> head(1) |> f_num()
+          f_int(dt_act_meta[['cols']][1])
         ),
-        'col_nas' = session$userData$dt$act_meta()[n_nas > 0, ] |> fnrow()
+        'col_nas' = dt_act_meta[n_nas > 0, ] |> fnrow()
       )
     })
 
@@ -190,6 +185,9 @@ spada_server <- function(datasets, conf, run_local = TRUE){
     # convert events -------------------------
     convert_cols_server('pE_convert_cols')
 
+    # duplicates events -------------------------
+    duplicates_server('pE_duplicates')
+
     # filter events --------------------------
     filter_rows_server('pE_filter_rows')
 
@@ -223,6 +221,7 @@ spada_server <- function(datasets, conf, run_local = TRUE){
     descriptive_stats_server('pA_desc_stats')
 
     # correlation ----------------------------
+    cor_matrix_server('pA_cor_matrix')
     correlation_server('pA_correlation')
 
     # normality test -------------------------
@@ -238,7 +237,7 @@ spada_server <- function(datasets, conf, run_local = TRUE){
     output_server('pO_output')
 
     # config events -----------------------------------------------------------
-    config_server('pC')
+    config_server('pC', app_session = session)
 
     # about events ------------------------------------------------------------
     about_spada_server('about_spada')
@@ -248,10 +247,13 @@ spada_server <- function(datasets, conf, run_local = TRUE){
       req(input$navbar)
       if (input$navbar == 'exit') {
 
-        if(session$userData$conf$save_session == 'ask'){
+        if (!session$userData$run_local ||
+            session$userData$conf$save_session == 'never'){
+          exit_without_save(session)
+        } else if(session$userData$conf$save_session == 'ask'){
           # ask to save data and ouput
           showModal(modalDialog(
-            title = 'Save Session',
+            title = div(icon('save'), 'Save Session'),
             'Do you want to save Data and Output objects?',
             easyClose = FALSE,
             size = 'm',
@@ -261,8 +263,6 @@ spada_server <- function(datasets, conf, run_local = TRUE){
               actionButton('btn_confirm_save_session', 'Yes', icon = icon('check'), class = 'btn-task')
             )
           ))
-        } else if (session$userData$conf$save_session == 'never'){
-          exit_without_save(session)
         } else if (session$userData$conf$save_session == 'always'){
           exit_with_save(session)
         }

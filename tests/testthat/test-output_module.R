@@ -1,8 +1,8 @@
 # tests/testthat/test-output_module.R
 
 out_el <- list(
-  'id_1' = gen_output(),
-  'id_2' = gen_output()
+  'id_1' = gen_output(element = div(h2('Test'))),
+  'id_2' = gen_output(element = iris |> gt())
 )
 
 # test elements ---------------------------------------------------------------
@@ -72,6 +72,7 @@ test_that('Save output stores qs2 file', {
 
     session$userData$conf <- reactiveValues(data_dir = tmpdir)
     session$userData$out <- reactiveValues(elements = out_el)
+    session$userData$run_local <- TRUE
     session$userData$out_edit_trigger <- reactiveVal(NULL)
 
     session$setInputs(btn_save_output_session = 1)
@@ -126,6 +127,7 @@ test_that('Import output loads qs2 file correctly', {
 
     session$userData$conf <- reactiveValues(data_dir = tmpdir)
     session$userData$out <- reactiveValues(elements = list())
+    session$userData$run_local <- TRUE
     session$userData$out_edit_trigger <- reactiveVal(NULL)
 
     session$setInputs(btn_import_output_session = 1)
@@ -180,7 +182,7 @@ test_that('Download HTML ', {
     expect_equal(
       output$btn_save_html |> basename() |> substr(1, 15),
       paste0(
-        'output_',
+        'spada_output_',
         format(Sys.time(), format = '%Y%m%d%H%M%S'),
         '.html') |> substr(1, 15)
     )
@@ -234,7 +236,6 @@ start_conf <- list(
   'plot_fill_color' = plot_fill_color,
   'plot_line_color' = plot_line_color
 )
-
 
 test_that('Test output - edit element', {
   testServer(spada_server(datasets = dfs, conf = start_conf), {

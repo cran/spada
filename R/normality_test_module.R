@@ -128,7 +128,7 @@ normality_test_server <- function(id) {
 
       df_names <- df_active() |> names()
 
-      var_analysis <- session$userData$dt$act_meta() |> filter(perc_nas != 1) |> pull(var)
+      var_analysis <- session$userData$dt$act_meta()[perc_nas != 1, var]
 
       df_names[df_names %in% var_analysis]
     })
@@ -215,9 +215,7 @@ normality_test_server <- function(id) {
     # insert histogram to output ----------------------------------------------
     insert_output_server(
       'norm_insert_output_hist',
-      reactive(
-        plotTag(norm_hist(), '', width = 1000, height = 500)
-      ),
+      reactive(plot_tag(norm_hist())),
       'Histogram'
     )
 
@@ -270,7 +268,7 @@ normality_test_server <- function(id) {
     # insert to output --------------------------------------------------------
     insert_output_server(
       'norm_insert_output_qq',
-      reactive(plotTag(norm_qq_plot(), '', width = 1000, height = 500)),
+      reactive(plot_tag(norm_qq_plot())),
       'QQ Plot'
     )
 
@@ -331,19 +329,16 @@ normality_test_server <- function(id) {
     # ks staticards -----------------------------------------------------------
     output$conditional_staticard_ks <- renderUI({
       req(ks_results())
+
+      idx_d <- ks_results()$results %in% c('statistic.D')
+      stat_d <- ks_results()$values[idx_d]
+
+      idx_p <- ks_results()$results %in% c('p.value')
+      p_value <- ks_results()$values[idx_p]
+
       tagList(
-        stati_card(ks_results()$results |>
-                   filter(results %in% c('statistic.D')) |>
-                   pull(values) |>
-                   as.numeric() |>
-                   f_num(dig = 5),
-                   'Statistic D (test value)'),
-        stati_card(ks_results()$results |>
-                   filter(results %in% c('p.value')) |>
-                   pull(values) |>
-                   as.numeric() |>
-                   f_num(dig = 5),
-                   'p value')
+        stati_card(stat_d |> as.numeric() |> f_num(dig = 5), 'Statistic D (test value)'),
+        stati_card(p_value |> as.numeric() |> f_num(dig = 5), 'p value')
       )
     })
 
@@ -383,10 +378,7 @@ normality_test_server <- function(id) {
 
     # help ks function --------------------------------------------------------
     observe({
-      showModal(modalDialog(
-        HTML(get_help_file('stats', 'ks.test')),
-        easyClose = TRUE, size = 'xl'
-      ))
+      fun_help_modal('stats', 'ks.test')
     }) |> bindEvent(input$btn_help_ks)
 
     # sw test -----------------------------------------------------------------
@@ -422,26 +414,23 @@ normality_test_server <- function(id) {
       sw_results() |>
         gt() |>
         cols_move(columns = 'values', after = 'results') |>
-        gt::cols_label('values' = 'Values', 'results' = 'Results') |>
+        cols_label('values' = 'Values', 'results' = 'Results') |>
         tab_header('Shapiro-Wilk Normality Test')
     })
 
     # sharpiro-wilk staticards ------------------------------------------------
     output$conditional_staticard_sw <- renderUI({
       req(sw_results())
+
+      idx_w <- sw_results()$results %in% c('statistic.W')
+      stat_w <- sw_results()$values[idx_w]
+
+      idx_p <- sw_results()$results %in% c('p.value')
+      p_value <- sw_results()$values[idx_p]
+
       tagList(
-        stati_card(sw_results() |>
-                   filter(results %in% c('statistic.W')) |>
-                   pull(values) |>
-                   as.numeric() |>
-                   f_num(dig = 5),
-                   'Statistic W (test value)'),
-        stati_card(sw_results() |>
-                   filter(results %in% c('p.value')) |>
-                   pull(values) |>
-                   as.numeric() |>
-                   f_num(dig = 5),
-                   'p value')
+        stati_card(stat_w |> as.numeric() |> f_num(dig = 5), 'Statistic W (test value)'),
+        stati_card(p_value |> as.numeric() |> f_num(dig = 5), 'p value')
       )
     })
 
@@ -471,10 +460,7 @@ normality_test_server <- function(id) {
 
     # help file of shapiro.test
     observe({
-      showModal(modalDialog(
-        HTML(get_help_file('stats', 'shapiro.test')),
-        easyClose = TRUE, size = 'xl'
-      ))
+      fun_help_modal('stats', 'shapiro.test')
     }) |> bindEvent(input$btn_help_sw)
 
     # sf test -----------------------------------------------------------------
@@ -510,7 +496,7 @@ normality_test_server <- function(id) {
       sf_results() |>
         gt() |>
         cols_move(columns = 'values', after = 'results') |>
-        gt::cols_label('values' = 'Values', 'results' = 'Results') |>
+        cols_label('values' = 'Values', 'results' = 'Results') |>
         tab_header('Shapiro-Francia Normality Test')
     })
 
@@ -518,19 +504,16 @@ normality_test_server <- function(id) {
     # sharpiro-francia staticards ---------------------------------------------
     output$conditional_staticard_sf <- renderUI({
       req(sf_results())
+
+      idx_w <- sf_results()$results %in% c('statistic.W')
+      stat_w <- sf_results()$values[idx_w]
+
+      idx_p <- sf_results()$results %in% c('p.value')
+      p_value <- sf_results()$values[idx_p]
+
       tagList(
-        stati_card(sf_results() |>
-                     filter(results %in% c('statistic.W')) |>
-                     pull(values) |>
-                     as.numeric() |>
-                     f_num(dig = 5),
-                   'Statistic W (test value)'),
-        stati_card(sf_results() |>
-                     filter(results %in% c('p.value')) |>
-                     pull(values) |>
-                     as.numeric() |>
-                     f_num(dig = 5),
-                   'p value')
+        stati_card(stat_w |> as.numeric() |> f_num(dig = 5), 'Statistic W (test value)'),
+        stati_card(p_value |> as.numeric() |> f_num(dig = 5), 'p value')
       )
     })
 
@@ -560,10 +543,7 @@ normality_test_server <- function(id) {
 
     # help file of ShapiroFranciaTest
     observe({
-      showModal(modalDialog(
-        HTML(get_help_file('DescTools', 'ShapiroFranciaTest')),
-        easyClose = TRUE, size = 'xl'
-      ))
+      fun_help_modal('DescTools', 'ShapiroFranciaTest')
     }) |> bindEvent(input$btn_help_sf)
 
   })
