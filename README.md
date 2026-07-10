@@ -1,11 +1,12 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# spada (<u>**S**</u>hiny <u>**Pa**</u>ckage for <u>**D**</u>ata <u>**A**</u>nalysis)
+# spada (Shiny Package for Data Analysis)
 
 <!-- badges: start -->
 
 [![](https://www.r-pkg.org/badges/version-last-release/spada)](https://cran.r-project.org/package=spada)
+[![](https://img.shields.io/badge/R-%3E%3D%204.4-blue)](https://CRAN.R-project.org/package=spada)
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-coral.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 [![](https://cranlogs.r-pkg.org/badges/grand-total/spada)](https://CRAN.R-project.org/package=spada)
@@ -140,6 +141,14 @@ search for diferent versions.
 <figure>
 <img src="man/figures/spada_output.png" alt="Output" />
 <figcaption aria-hidden="true">Output</figcaption>
+</figure>
+
+#### Exported Output
+
+<figure>
+<img src="man/figures/spada_output_exported.png"
+alt="Exported Output" />
+<figcaption aria-hidden="true">Exported Output</figcaption>
 </figure>
 
 ### Options

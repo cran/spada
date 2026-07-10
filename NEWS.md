@@ -10,9 +10,33 @@ editor_options:
 
 [0.2.0 Version Milestone](https://github.com/lgschuck/spada/milestone/2)
 
-# Spada 0.1.6
+# Spada 0.1.7
 
-CRAN update submission: 2026-06-10
+### Improvements
+
+1 - **utils**: better internal functions for register/import output events (edit and delete buttons)
+
+2 - **Output**: new footer in exported HTML output file
+
+3 - New **One-sample t test** module: ([#22](https://github.com/lgschuck/spada/issues/22))
+
+4 - New **residuals plots** and **VIF** in Linear Model module
+
+5 - New **ExtendedTask in Descriptive Stats** module
+
+#### Visuals 
+
+1 - New **mini buttons** (new css) in sidebar and navbar df info
+
+2 - Better layout in tests (z test, t test, etc) sidebar
+
+### Bug fixes
+
+1 - Normality test: **KS test undefined values** in cards ([#80](https://github.com/lgschuck/spada/issues/80))
+
+2 - Error when **installing binaries from CRAN** ([#81](https://github.com/lgschuck/spada/issues/81))
+
+# Spada 0.1.6
 
 ### Improvements
 

@@ -1,6 +1,6 @@
 Package: spada
 Title: A 'shiny' Package for Data Analysis
-Version: 0.1.6
+Version: 0.1.7
 Authors@R: 
     person("Luís Gustavo", "Schuck", email="luisgustavoschuck@yahoo.com.br",  
     role = c("aut", "cre"))
@@ -23,12 +23,12 @@ Imports: bsicons (>= 0.1.2), bslib (>= 0.10.0), collapse (>= 2.1.6),
         1.12.1), shinyWidgets (>= 0.9.0), waiter (>= 0.2.5.1), writexl
         (>= 1.5.4)
 Encoding: UTF-8
-RoxygenNote: 7.3.3
 Suggests: dplyr, knitr, rmarkdown, testthat (>= 3.0.0), tidyselect
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
 NeedsCompilation: no
-Packaged: 2026-06-11 10:38:57 UTC; luisg
+Packaged: 2026-07-10 01:39:04 UTC; luisg
 Author: Luís Gustavo Schuck [aut, cre]
 Repository: CRAN
-Date/Publication: 2026-06-11 11:20:02 UTC
+Date/Publication: 2026-07-10 05:50:02 UTC

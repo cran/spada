@@ -227,7 +227,8 @@ spada_server <- function(datasets, conf, run_local = TRUE){
     # normality test -------------------------
     normality_test_server('pA_normality_test')
 
-    # z test ---------------------------------
+    # stats test -----------------------------
+    one_t_test_server('pA_t_test')
     z_test_server('pA_z_test')
 
     # linear model ---------------------------
@@ -258,8 +259,8 @@ spada_server <- function(datasets, conf, run_local = TRUE){
             easyClose = FALSE,
             size = 'm',
             footer = tagList(
-              actionButton('btn_cancel_exit', 'Cancel', icon = icon('xmark'), class = 'btn-task btn-task-cancel'),
-              actionButton('btn_cancel_save_session', 'No', icon = icon('xmark'), class = 'btn-task'),
+              actionButton('btn_cancel_exit', 'Cancel', icon = icon('xmark'), class = 'btn-task btn-task-neutral'),
+              actionButton('btn_cancel_save_session', 'No', icon = icon('xmark'), class = 'btn-task btn-task-cancel'),
               actionButton('btn_confirm_save_session', 'Yes', icon = icon('check'), class = 'btn-task')
             )
           ))

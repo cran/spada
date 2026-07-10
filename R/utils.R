@@ -506,29 +506,6 @@ spada_output_css <- tags$head(tags$style(HTML(
   )
 )))
 
-# output header ---------------------------------------------------------------
-spada_output_header <- div(
-  style = '
-    padding: 20px 24px;
-
-    background: linear-gradient(
-      135deg,
-      #003452 0%,
-      #02517d 100%
-    );
-
-    border-radius: 4px;
-    color: #ffffff;
-    margin-bottom: 25px;
-  ',
-
-  div(
-    style = 'display: flex; flex-direction: column;',
-    tags$div(
-      'Spada Output',
-      style = ' font-size: 32px; font-weight: 450; letter-spacing: 4px;')
-  )
-)
 # ============================================================================.
 # ---------------------------- FUNCTIONS -------------------------------------
 # ============================================================================.
@@ -549,7 +526,7 @@ spada_user_dir <- function(which){
 # set theme -------------------------------------------------------------------
 set_spada_theme <- function(session, theme){
 
-  session$setCurrentTheme(spada_themes[[theme]])
+  session$setCurrentTheme(spada_bs_theme(theme))
   session$userData$conf$theme <- theme
 }
 
@@ -677,8 +654,94 @@ printable_report_card <- function(btns, card, id = NULL){
   )
 }
 
-# spada output ----------------------------------------------------------------
-spada_output <- function(output, header){
+# output header ---------------------------------------------------------------
+spada_output_info_card <- function(content){
+  div(
+    style = '
+    padding: 20px 24px;
+
+    background: linear-gradient(
+      135deg,
+      #003452 0%,
+      #02517d 100%
+    );
+
+    border-radius: 4px;
+    color: #ffffff;
+    margin-bottom: 25px;
+  ',
+    content
+  )
+}
+
+spada_output_header <- spada_output_info_card(
+  div(
+    style = 'display: flex; flex-direction: column;',
+    tags$div(
+      'Spada Output',
+      style = ' font-size: 32px; font-weight: 450; letter-spacing: 4px;')
+  )
+)
+
+spada_output_footer <- spada_output_info_card(
+  div(
+    style = '
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    ',
+
+    # left
+    div(
+      paste('Spada:', utils::packageVersion('spada')),
+      tags$br(),
+
+      tags$a(
+        href = 'https://cran.r-project.org/package=spada',
+        target = '_blank',
+        style = 'color: white;',
+        'CRAN'
+      ),
+
+      ' | ',
+
+      tags$a(
+        href = 'https://github.com/lgschuck/spada',
+        target = '_blank',
+        style = 'color: white;',
+        'GitHub'
+      ),
+
+      ' | ',
+
+      tags$a(
+        href = 'https://lgschuck.github.io/spada/',
+        target = '_blank',
+        style = 'color: white;',
+        'Documentation'
+      ),
+
+      ' | ',
+
+      tags$a(
+        href = 'https://lgschuck.github.io/spada_book/',
+        target = '_blank',
+        style = 'color: white;',
+        'Book'
+      )
+    ),
+
+    # right
+    div(
+      style = 'text-align: right;',
+      format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')
+    )
+  )
+)
+
+spada_output <- function(output, header = spada_output_header, footer = spada_output_footer){
   toc <- tags$div(
     class = 'toc',
     style = '
@@ -731,9 +794,38 @@ spada_output <- function(output, header){
 
   tags$html(
     spada_output_css,
-    tags$body(div(id = 'home', header), body_content)
+    tags$body(div(id = 'home', header), body_content, footer)
   )
 }
+
+# add output element ----------------------------------------------------------
+add_output_element <- function(id, title, annotation, element, btn_xid, btn_eid){
+
+  btn_x <- actionButton(btn_xid, '', icon('x'), class = 'micro-btn-cancel')
+  btn_e <- actionButton(btn_eid, '', icon('pen-to-square'), class = 'micro-btn-cancel')
+
+  list(
+    'id' = id,
+    'title' = title,
+    'annotation' = annotation,
+    'element' = element,
+    'card' = report_card(title, annotation, element),
+    'btn_x' = btn_x,
+    'btn_e' = btn_e
+  )
+}
+
+# register outputs events -----------------------------------------------------
+register_output_events <- function(id, session, input, btn_xid, btn_eid) {
+  observe({
+    session$userData$out$elements[[id]] <- NULL
+  }) |> bindEvent(input[[btn_xid]], once = TRUE)
+
+  observe({
+    session$userData$out_edit_trigger(id)
+  }) |> bindEvent(input[[btn_eid]])
+}
+
 # generate output object ------------------------------------------------------
 gen_output <- function(element = div(h2('Element'))){
 
@@ -744,31 +836,15 @@ gen_output <- function(element = div(h2('Element'))){
   btn_xid <- paste0('btn_xout_', id)
   btn_eid <- paste0('btn_eout_', id)
 
-  btn_x <- actionButton(
-    btn_xid,
-    '',
-    icon('x'),
-    class = 'micro-btn-cancel'
-  )
-
-  btn_e <- actionButton(
-    btn_eid,
-    '',
-    icon('pen-to-square'),
-    class = 'micro-btn-cancel'
-  )
-
   element <- if(is.null(element)) data.frame(x = letters) |> gt() else element
-  output_card <- report_card(title, annotation, element)
 
-  list(
-    'id' = id,
-    'title' = title,
-    'annotation' = annotation,
-    'element' = element,
-    'card' = output_card,
-    'btn_x' = btn_x,
-    'btn_e' = btn_e
+  add_output_element(
+    id,
+    title,
+    annotation,
+    element,
+    btn_xid,
+    btn_eid
   )
 }
 
@@ -845,9 +921,29 @@ empty_plot <- function(msg = 'No plot', c = 2){
 }
 
 # bslib btn task --------------------------------------------------------------
-btn_task <- function(ID, LABEL, ICON = NULL, LABEL_BUSY = "Running...", ...){
-  bslib::input_task_button(id = ID, label = LABEL, icon = ICON,
-                           label_busy = LABEL_BUSY, class = 'btn-task', ...)
+btn_task <- function(ID,
+                     LABEL,
+                     ICON = NULL,
+                     LABEL_BUSY = 'Running...',
+                     ...){
+  input_task_button(
+    id = ID,
+    label = LABEL,
+    icon = ICON,
+    label_busy = LABEL_BUSY,
+    class = 'btn-task',
+    ...
+  )
+}
+
+# mini_btn --------------------------------------------------------------------
+mini_btn <- function(ID, LABEL, ICON){
+  actionButton(
+    inputId = ID,
+    label = LABEL,
+    icon = ICON,
+    class = 'mini-btn'
+  )
 }
 
 # messages - shownotification -------------------------------------------------
@@ -1331,9 +1427,9 @@ plot_z_test <- function(confidence = 0.95, test_type = 'two.sided',
   }
 
   # Create the plot
-  plot(x, y, type = "l", lwd = 2, col = color_line,
+  plot(x, y, type = 'l', lwd = 2, col = color_line,
        xlab = 'Standardized Values (Z)', ylab = 'Density',
-       main = paste('Test Type:', test_type, ' - Confidence:',
+       main = paste('Z Test\n Type:', test_type, '- Conf.',
                     confidence * 100, '% | Z value:', z_value |> f_num(dig = 3)))
 
   # Highlight the critical regions
@@ -1354,6 +1450,62 @@ plot_z_test <- function(confidence = 0.95, test_type = 'two.sided',
 
   if(abs(z_value) <= 4){
     abline(v = z_value, col = 'black', lwd = 2, lty = 2)
+  }
+
+}
+
+# plot t test -----------------------------------------------------------------
+plot_t_test <- function(confidence = 0.95, test_type = 'two.sided',
+                        df = 10, t_value = qt(confidence, df = 10),
+                        color_fill = 'brown3', color_line = 'steelblue') {
+    x <- seq(-4, 4, length.out = 1000)
+  y <- dt(x, df = df)
+
+  alpha <- 1 - confidence
+
+  # Determine critical values in standardized scale
+  if (test_type == 'two.sided') {
+    t_critical <- qt(1 - alpha / 2, df = df)
+    critical_left <- -t_critical
+    critical_right <- t_critical
+  } else if (test_type == 'greater') {
+    critical_right <- qt(1 - alpha, df = df)
+  } else if (test_type == 'less') {
+    critical_left <- qt(alpha, df = df)
+  } else {
+    stop("Invalid 'test_type'. Use 'two.sided', 'greater', or 'less'.")
+  }
+
+  # Create the plot
+  plot(x, y, type = 'l', lwd = 2, col = color_line,
+       xlab = 't-value', ylab = 'Density',
+       main = paste(
+         'One-sample t Test\n',
+         'Type:', test_type,
+         '- Conf.', confidence * 100,
+         '% | t value =', t_value |> f_num(dig = 3),
+        '(df =', df |> f_int(), ')'
+       )
+  )
+
+  # Highlight the critical regions
+  if (test_type == 'two.sided') {
+    polygon(c(x[x <= critical_left], critical_left),
+            c(y[x <= critical_left], 0), col = color_fill, border = NA)
+    polygon(c(x[x >= critical_right], critical_right),
+            c(y[x >= critical_right], 0), col = color_fill, border = NA)
+
+  } else if (test_type == 'less') {
+    polygon(c(x[x <= critical_left], critical_left),
+            c(y[x <= critical_left], 0), col = color_fill, border = NA)
+
+  } else if (test_type == 'greater') {
+    polygon(c(x[x >= critical_right], critical_right),
+            c(y[x >= critical_right], 0), col = color_fill, border = NA)
+  }
+
+  if(abs(t_value) <= 4){
+    abline(v = t_value, col = 'black', lwd = 2, lty = 2)
   }
 
 }
@@ -1695,7 +1847,7 @@ spada_plot <- function(
         na.rm = na_rm
       ) +
       geom_vline(xintercept = vertical_line, color = line_color, linetype = line_type) +
-      labs(x = xlab, y = ylab, title = title) +
+      labs(title = title, x = xlab, y = ylab) +
       theme_classic() +
       theme(axis.text.x = element_text(size = 14),
             axis.text.y = element_text(size = 14),
@@ -1715,7 +1867,7 @@ spada_plot <- function(
                                 sd = sd_value),
                     color = line_color,
                     linewidth = 1) +
-      labs(x = xlab, y = ylab, title = title) +
+      labs(title = title, x = xlab, y = ylab) +
       theme_classic() +
       theme(axis.text.x = element_text(size = 14),
             axis.text.y = element_text(size = 14),
@@ -1731,36 +1883,39 @@ spada_plot <- function(
       geom_boxplot(fill = fill_color, na.rm = na_rm) +
       ylim(-1.2, 1.2) +
       geom_vline(xintercept = vertical_line, color = line_color, linetype = line_type) +
-      labs(x = '', y = '') +
+      labs(title = title, x = xlab, y = ylab) +
       theme_classic() +
       theme(
         axis.ticks.y = element_blank(),
         axis.text.y  = element_blank(),
         axis.line.y  = element_blank(),
         panel.border = element_rect(color = '#000000', fill = NA),
-        axis.text.x = element_text(size = 14)
+        axis.text.x = element_text(size = 14),
+        plot.title = element_text(color = title_color, size = 16, face = 'bold')
       )
   } else if(type == 'dots'){
 
     ggplot(data = df, aes(x = .data[[xvar]], y = .data[[yvar]])) +
       geom_point(shape = point_shape, color = fill_color, na.rm = na_rm) +
       geom_hline(yintercept = vertical_line, color = line_color, linetype = line_type) +
-      labs(x = xlab, y = ylab) +
+      labs(title = title, x = xlab, y = ylab) +
       theme_classic() +
       theme(axis.text.x = element_text(size = 14),
             axis.text.y = element_text(size = 14),
             axis.title.x = element_text(size = 16),
-            axis.title.y = element_text(size = 16)
+            axis.title.y = element_text(size = 16),
+            plot.title = element_text(color = title_color, size = 16, face = 'bold')
       )
   } else if (type == 'barplot'){
 
     ggplot(data = df, aes(x = factor(.data[[xvar]]))) +
       geom_bar(fill = fill_color, na.rm = na_rm) +
-      labs(x = xlab, y = ylab) +
+      labs(title = title, x = xlab, y = ylab) +
       theme_classic() +
       theme(axis.text.x = element_text(size = 14),
             axis.text.y = element_text(size = 14),
-            axis.title.y = element_text(size = 16)
+            axis.title.y = element_text(size = 16),
+            plot.title = element_text(color = title_color, size = 16, face = 'bold')
       )
 
   } else if (type == 'boxplot_group'){
@@ -1771,7 +1926,7 @@ spada_plot <- function(
       geom_hline(yintercept = vertical_line,
                  color = line_color) +
       coord_flip() +
-      labs(x = xlab, y = ylab) +
+      labs(title = title, x = xlab, y = ylab) +
       theme_classic() +
       theme(
         legend.position = 'none',
@@ -1779,14 +1934,14 @@ spada_plot <- function(
         axis.line.y  = element_blank(),
         panel.border = element_rect(color = 'black', fill = NA),
         axis.text.x = element_text(size = 14),
-        axis.text.y = element_text(size = 14)
+        axis.text.y = element_text(size = 14),
+        plot.title = element_text(color = title_color, size = 16, face = 'bold')
       )
   } else if (type == 'scatter'){
 
     ggplot(data = df, aes(x = .data[[xvar]], y = .data[[yvar]])) +
       geom_point(color = fill_color, shape = point_shape, na.rm = na_rm) +
-      labs(title = title,
-           x = xlab, y = ylab) +
+      labs(title = title, x = xlab, y = ylab) +
       theme_classic() +
       theme(axis.text.x = element_text(size = 14),
             axis.text.y = element_text(size = 14),
@@ -2122,7 +2277,10 @@ gt_info <- function(df, df_name){
   }
 
   dt_gt |>
-    tab_header(df_name) |>
+    tab_header(
+      title = df_name,
+      subtitle = paste(f_int(dt$rows[1]), 'rows -', f_int(dt$cols[1]), 'variables')
+    ) |>
     cols_hide(columns = c('rows', 'cols')) |>
     fmt_percent(columns = c('perc_valid', 'perc_zero', 'perc_nas')) |>
     data_color(columns = 'n_valid', palette = lg_palette) |>
@@ -2149,7 +2307,7 @@ gt_info <- function(df, df_name){
     cols_merge(columns = c('n_valid', 'perc_valid'), pattern = "{1} / {2}") |>
     cols_merge(columns = c('n_zero', 'perc_zero'), pattern = "{1} / {2}") |>
     cols_merge(columns = c('n_nas', 'perc_nas'), pattern = "{1} / {2}") |>
-    tab_options(table.background.color = '#ffffff')
+    tab_options(table.background.color = '#ffffff', heading.title.font.size = 20)
 }
 
 is_date <- function(x){

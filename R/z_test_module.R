@@ -14,56 +14,52 @@ z_test_ui <- function(id) {
           card(
             layout_sidebar(
               sidebar = sidebar(
-                width = 380,
-                fluidRow(
-                  h5('Sampe Values'),
-                  column(6, p(textOutput(ns('sample_mean')))),
-                  column(6, p(textOutput(ns('sample_sd'))))
-                ),
+                h5('Sample Values', style = 'margin-bottom: -18px;'),
+                div(textOutput(ns('sample_mean')), textOutput(ns('sample_sd'))),
                 h5('Parameters', style = 'margin-bottom: -18px;'),
-                layout_columns(
-                  numericInput(
-                    ns('mu'),
-                    list('Mean', bs_icon('info-circle') |>
-                           ttip('Hypothesized Mean')), 0),
-                  numericInput(
-                    ns('sd'),
-                    list('Std Deviation', bs_icon('info-circle') |>
-                           ttip('Standard Deviation of Population')),
-                    value = 1, min = 0)
-                ),
+                numericInput(
+                  ns('mu'),
+                  list('Mean', bs_icon('info-circle') |>
+                         ttip('Hypothesized Mean')), 0, width = '180px'),
+                numericInput(
+                  ns('sd'),
+                  list('Std Deviation', bs_icon('info-circle') |>
+                         ttip('Standard Deviation of Population')),
+                  value = 1, min = 0, width = '180px'),
                 radioButtons(ns('radio_alternative'), 'Alternative',
                              c('Two sided' = 'two.sided',
                                'Less' = 'less',
-                               'Greater' = 'greater'), inline = T),
+                               'Greater' = 'greater')),
                 numericInput(ns('confidence'), 'Confidence Interval - %',
-                             value = 95, 0, 100, 5, width = '200px'),
+                             value = 95, 0, 100, 5, width = '180px'),
                 layout_columns(
-                  col_widths = c(6, 6),
-                  btn_task(ns('btn_run_test'), 'Run Test', icon('gear')),
+                  col_widths = c(8),
+                  btn_task(ns('btn_run_test'), 'Run Test', icon('gear'))
+                ),
+                layout_columns(
+                  col_widths = c(8),
                   btn_task(ns('btn_help_ztest'), 'Help', icon('question'))
-                )
+                ),
               ),
+
               card_body(
                 layout_columns(
-                  col_widths = c(2, 7, 3),
-                  fluidRow(
-                    div(
-                      style = 'margin-bottom: 10px;',
-                      uiOutput(ns('conditional_staticard_ztest')),
-                    )
+                  col_widths = c(8, 4),
+                  div(
+                    uiOutput(ns('conditional_plot')),
+
+                    br(),
+
+                    uiOutput(ns('conditional_staticard_ztest'))
                   ),
-                  uiOutput(ns('conditional_plot')),
                   div(
                     gt_output(ns('ztest_gt')),
-                    br(), br(),
+                    br(),
                     uiOutput(ns('conditional_save_gt'))
                   )
                 )
               ),
-              card_footer(
-                uiOutput(ns('conditional_add_output'))
-              )
+              card_footer(uiOutput(ns('conditional_add_output')))
             )
           )
         ),
@@ -150,8 +146,8 @@ z_test_server <- function(id) {
       } else if(!isTruthy(input$confidence) ||
          !between(input$confidence, 0, 100)) {
         msg_error('Confidence interval must be between 0 and 100%', 2)
-      } else if (sum(!is.na(var())) < 2) {
-        msg_error('Inform at least 2 valid values2')
+      } else if (fnobs(var()) < 2) {
+        msg_error('Inform at least 2 valid values')
       } else {
         df <- ZTest(var(),
                     alternative = input$radio_alternative,
@@ -225,11 +221,8 @@ z_test_server <- function(id) {
       req(ztest$results)
       req(ztest$confidence)
 
-      idx_alt <- ztest$results$results %in% c('alternative')
-      alt <- ztest$results$values[idx_alt]
-
-      idx_z <- ztest$results$results %in% c('statistic.z')
-      z_value <- ztest$results$values[idx_z]
+      alt <- ztest$results$values[which(ztest$results$results == 'alternative')]
+      z_value <- ztest$results$values[which(ztest$results$results == 'statistic.z')]
 
       function(){
         plot_z_test(
@@ -252,13 +245,11 @@ z_test_server <- function(id) {
     output$conditional_staticard_ztest <- renderUI({
       req(ztest_results_gt())
 
-      idx_z <- ztest$results$results %in% c('statistic.z')
-      z_value <- ztest$results$values[idx_z]
+      z_value <- ztest$results$values[which(ztest$results$results  == 'statistic.z')]
+      p_value <- ztest$results$values[which(ztest$results$results == 'p.value')]
 
-      indx_p <- ztest$results$results %in% c('p.value')
-      p_value <- ztest$results$values[indx_p]
-
-      tagList(
+      layout_columns(
+        col_widths = c(6, 6),
         stati_card(f_num(as.numeric(z_value), dig = 3), 'Z value'),
         stati_card(f_num(as.numeric(p_value), dig = 3), 'p value')
       )
