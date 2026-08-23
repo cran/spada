@@ -79,6 +79,10 @@ if(interactive()){
 }
 ```
 
+## Tests
+
+Spada is tested via testthat and currently runs over **900 tests**.
+
 ## Docker
 
 Spada is distributed as a **Docker Image**.
@@ -92,7 +96,7 @@ search for diferent versions.
 ## Screenshots
 
 <figure>
-<img src="man/figures/spada_loading_0.1.3.png" alt="Loading" />
+<img src="man/figures/spada_loading.png" alt="Loading" />
 <figcaption aria-hidden="true">Loading</figcaption>
 </figure>
 

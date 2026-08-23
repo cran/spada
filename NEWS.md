@@ -10,6 +10,28 @@ editor_options:
 
 [0.2.0 Version Milestone](https://github.com/lgschuck/spada/milestone/2)
 
+# Spada 0.1.8
+
+### Improvements
+
+1 - **QQ Plot in linear model**: inserted QQ Plot for residuals (Exploratory and Lm modules)
+
+2 - New **missing module**: identify and replace missing values ([#72](https://github.com/lgschuck/spada/issues/72))
+
+3 - Now **double and integer** are treated differently (not just equally as numeric)
+
+#### Visuals 
+
+1 - New **waiter screen** in startup and close
+
+2 - Better colors consistency through all the package
+
+3 - Better CSS with rounded corners
+
+### Bug fixes
+
+1 - Fixed time in Spada Output footer (HTML exported file) ([#82](https://github.com/lgschuck/spada/issues/82))
+
 # Spada 0.1.7
 
 ### Improvements

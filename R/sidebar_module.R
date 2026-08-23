@@ -4,6 +4,7 @@ sidebar_ui <- function(id) {
   ns <- NS(id)
 
   sidebar(
+    class = 'spada-main-sidebar',
     open = T,
     accordion(
       open = T,
@@ -160,10 +161,8 @@ sidebar_server <- function(id, app_session) {
     output$df_preview <- renderUI({
       req(session$userData$dt$dt, input$sel_datasets_names)
 
-      n <- min(5, session$userData$dt$dt[[input$sel_datasets_names]] |> fnrow())
-      df <- session$userData$dt$dt[[input$sel_datasets_names]][1:n, ]
-
-      gt(df) |>
+      head(session$userData$dt$dt[[input$sel_datasets_names]], 5) |>
+        gt() |>
         tab_header(input$sel_datasets_names) |>
         tab_options(heading.align = 'left') |>
         as_raw_html() |>

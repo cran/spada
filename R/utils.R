@@ -318,134 +318,174 @@ js_exit <- "Shiny.addCustomMessageHandler('closeWindow', function(m) {window.clo
 tag_js_exit <- tags$head(tags$script(HTML(js_exit)))
 
 # waiter screen ----------------------------------------------------------------
-waiter_right_foot <- div('Built with R and Shiny', class = 'screen-footer-right')
-waiter_spinner <- div(class = 'screen-spinner')
+waiter_right_foot <- function(){
+  div(paste('Version', packageVersion('spada')), class = 'spada-waiter-right-footer')
+}
+waiter_progress_bar <- div(class = 'spada-waiter-progress',  div(class = 'spada-waiter-bar'))
 
 waiter_screen <- tags$style(
   HTML(
     "
+
+    .waiter-overlay-content{
+      width: 100% !important;
+      max-width: none !important;
+      display: flex !important;
+      justify-content: center;
+      align-items: center;
+    }
+
     .waiter-overlay {
-      font-family: 'Segoe UI', Ubuntu, system-ui;
-      color: white;
+      font-family: 'Segoe UI', sans-serif;
+
       display: flex;
       justify-content: center;
       align-items: center;
+      overflow:hidden;
 
-      background: linear-gradient(
-        55deg,
-        #02517D,
-	    	#0A101C,
-        #001030,
-		    #003452,
-		    #02517D,
-        #003452,
-        #001030,
-		    #0A101C,
-		    #02517D
-      );
-
-      background-size: 400% 400%;
-      animation: gradientMove 16s ease infinite;
-    }
-
-    @keyframes gradientMove {
-      0%   { background-position: 0% 50%; }
-      50%  { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    .waiter-overlay .screen-container {
-      text-align: center;
-      animation: fadeIn 1.2s ease;
-    }
-
-    .waiter-overlay .screen-title-box {
-      position: relative;
       width: 100vw;
-      padding: 40px 0;
-      border-radius: 0;
-      background: rgba(10, 16, 28, 0.25);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: none;
-      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      height: 100vh;
+
+      background:
+
+          radial-gradient(circle at top,
+              rgba(255,255,255,.28),
+              transparent 45%),
+
+          radial-gradient(circle,
+              rgba(95,110,125,.18) 2px,
+              transparent 2px),
+
+          linear-gradient(
+              180deg,
+              #0A6CA4 0%,
+              #02517D 35%,
+              #014A72 70%,
+              #013D5E 100%
+          );
+
+      background-size:
+          cover,
+          25px 25px,
+          cover;
+
+      position:relative;
     }
 
-    .waiter-overlay .screen-title {
-      font-size: 80px;
-      font-weight: 450;
-      letter-spacing: 10px;
+    .waiter-overlay .spada-waiter-card{
+        position :relative;
+        z-index: 1;
+        width: 90%;
+        max-width: 800px;
+        padding: 60px 60px 60px 60px;
+        background: #EEF2F5;
+        border-radius: 16px;
+        box-shadow:
+            0 30px 70px rgba(0,0,0,.30),
+            0 8px 20px rgba(0,0,0,.18);
+        text-align:left;
+        animation:fade .8s ease;
     }
 
-    .waiter-overlay .screen-subtitle {
-      margin-top: 10px;
-      font-size: 32px;
-      font-weight: 450;
-      opacity: 0.9;
-      letter-spacing: 4px;
+    @keyframes fade{
+        from{
+            opacity: 0;
+            transform: translateY(18px);
+        }
+        to{
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
-    .waiter-overlay .screen-subtitle2 {
-      margin-top: 15px;
-      font-size: 20px;
-      font-weight: 100;
+    .waiter-overlay .spada-waiter-title{
+        font-size: 60px;
+        font-weight: 300;
+        letter-spacing: 12px;
+        color: #1C4B71;
+    }
+
+    .waiter-overlay .spada-waiter-subtitle{
+        margin-top: 10px;
+        font-size: 32px;
+        opacity: 0.95;
+        letter-spacing: 4px;
+        color: #607B95;
+    }
+
+    .waiter-overlay .spada-waiter-subtitle2{
+        margin-top: 10px;
+        font-size: 24px;
+        font-weight: 100;
+        opacity: 0.9;
+        letter-spacing: 4px;
+        color: #607B95;
+    }
+
+    .waiter-overlay .spada-waiter-subtitle3{
+        margin-top: 15px;
+        font-size: 18px;
+        font-weight: 100;
+        opacity: 0.85;
+        letter-spacing: 4px;
+        color: #607B95;
+    }
+
+    .waiter-overlay .spada-waiter-progress{
+        margin: 42px auto 24px;
+        width: 100%;
+        height: 8px;
+        background: #D9E2EB;
+        border-radius: 999px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .waiter-overlay .spada-waiter-bar{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 20%;
+        height: 100%;
+        border-radius: 999px;
+        background:
+            linear-gradient(
+                90deg,
+                #2F80ED,
+                #72C2FF,
+                #2F80ED
+            );
+
+        box-shadow:
+            0 0 10px rgba(47,128,237,.35);
+
+        animation: loading 3.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes loading{
+        from{ left: 0; }
+        to{ left: 80%; }
+    }
+
+    .waiter-overlay .spada-waiter-card-footer{
+        margin-top: 40px;
+        color: #8FA4B8;
+        font-size: 13px;
+    }
+
+    .waiter-overlay .spada-waiter-right-footer{
+        position: fixed;
+        right: 24px;
+        bottom: 20px;
+        color: #6F89A1;
+        font-size: 16px;
+        letter-spacing: 1px;
+    }
+
+    .waiter-overlay .spada-waiter-log{
+      color: #607B95;
+      font-size: 16px;
       opacity: 0.85;
-      letter-spacing: 4px;
-    }
-
-    .waiter-overlay .screen-subtitle3 {
-      margin-top: 15px;
-      font-size: 16px;
-      font-weight: 100;
-      opacity: 0.85;
-      letter-spacing: 4px;
-    }
-
-    .waiter-overlay .screen-spinner {
-      margin: 30px auto 0;
-      width: 60px;
-      height: 60px;
-      border: 5px solid rgba(255,255,255,0.2);
-      border-top: 5px solid white;
-      border-radius: 50%;
-      animation: spin 1.1s linear infinite;
-    }
-
-    .screen-footer-right {
-      font-family: 'Segoe UI', Ubuntu, system-ui;
-      color: white;
-      position: fixed;
-      bottom: 12px;
-      right: 16px;
-      font-size: 16px;
-      letter-spacing: 1px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .waiter-overlay .waiter-log {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: 'Segoe UI', Ubuntu, system-ui;
-      margin-top: 15px;
-      font-size: 16px;
-      font-weight: 300;
-      letter-spacing: 2px;
-      height: 50px;
-      width: 400px;
-      text-align: center;
-      align-items: center;
     }
   "
   )
@@ -482,7 +522,7 @@ spada_output_css <- tags$head(tags$style(HTML(
         display:block;
         padding:8px 12px;
 
-        color:#444;
+        color:#444444;
         text-decoration:none;
 
         border-radius:6px;
@@ -662,11 +702,10 @@ spada_output_info_card <- function(content){
 
     background: linear-gradient(
       135deg,
-      #003452 0%,
-      #02517d 100%
+      #02517d 0%,
+      #0A6CA4 100%
     );
 
-    border-radius: 4px;
     color: #ffffff;
     margin-bottom: 25px;
   ',
@@ -674,74 +713,7 @@ spada_output_info_card <- function(content){
   )
 }
 
-spada_output_header <- spada_output_info_card(
-  div(
-    style = 'display: flex; flex-direction: column;',
-    tags$div(
-      'Spada Output',
-      style = ' font-size: 32px; font-weight: 450; letter-spacing: 4px;')
-  )
-)
-
-spada_output_footer <- spada_output_info_card(
-  div(
-    style = '
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-    ',
-
-    # left
-    div(
-      paste('Spada:', utils::packageVersion('spada')),
-      tags$br(),
-
-      tags$a(
-        href = 'https://cran.r-project.org/package=spada',
-        target = '_blank',
-        style = 'color: white;',
-        'CRAN'
-      ),
-
-      ' | ',
-
-      tags$a(
-        href = 'https://github.com/lgschuck/spada',
-        target = '_blank',
-        style = 'color: white;',
-        'GitHub'
-      ),
-
-      ' | ',
-
-      tags$a(
-        href = 'https://lgschuck.github.io/spada/',
-        target = '_blank',
-        style = 'color: white;',
-        'Documentation'
-      ),
-
-      ' | ',
-
-      tags$a(
-        href = 'https://lgschuck.github.io/spada_book/',
-        target = '_blank',
-        style = 'color: white;',
-        'Book'
-      )
-    ),
-
-    # right
-    div(
-      style = 'text-align: right;',
-      format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')
-    )
-  )
-)
-
-spada_output <- function(output, header = spada_output_header, footer = spada_output_footer){
+spada_output <- function(output){
   toc <- tags$div(
     class = 'toc',
     style = '
@@ -790,6 +762,73 @@ spada_output <- function(output, header = spada_output_header, footer = spada_ou
     style = 'display:flex; align-items:flex-start;',
     cards,
     toc
+  )
+
+  header <- spada_output_info_card(
+    div(
+      style = 'display: flex; flex-direction: column;',
+      tags$div(
+        'Spada Output',
+        style = ' font-size: 32px; font-weight: 450; letter-spacing: 4px;')
+    )
+  )
+
+  footer <- spada_output_info_card(
+    div(
+      style = '
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    ',
+
+      # left
+      div(
+        paste('Spada:', utils::packageVersion('spada')),
+        tags$br(),
+
+        tags$a(
+          href = 'https://cran.r-project.org/package=spada',
+          target = '_blank',
+          style = 'color: white;',
+          'CRAN'
+        ),
+
+        ' | ',
+
+        tags$a(
+          href = 'https://github.com/lgschuck/spada',
+          target = '_blank',
+          style = 'color: white;',
+          'GitHub'
+        ),
+
+        ' | ',
+
+        tags$a(
+          href = 'https://lgschuck.github.io/spada/',
+          target = '_blank',
+          style = 'color: white;',
+          'Documentation'
+        ),
+
+        ' | ',
+
+        tags$a(
+          href = 'https://lgschuck.github.io/spada_book/',
+          target = '_blank',
+          style = 'color: white;',
+          'Book'
+        )
+      ),
+
+      # right
+      div(
+        style = 'text-align: right;',
+        format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')
+      )
+    )
   )
 
   tags$html(
@@ -886,22 +925,40 @@ safe_env <- function(operations = NULL){
 }
 
 # test dataset ----------------------------------------------------------------
-test_dataset <- function(n_row = 1e3, n_col = 11){
+add_na <- function(x, prop = 0.05) {
+  idx <- sample.int(length(x), ceiling(length(x) * prop))
+  x[idx] <- NA
+  x
+}
+
+test_dataset <- function(n_row = 1e3, n_col = 18) {
+
   test_data <- data.table(
-    integer_var = rep(sample(1:100, n_row, replace = T)),
+    integer_var = sample(1:100, n_row, replace = TRUE),
     numeric_var = rnorm(n_row),
-    char_var = rep(sample(letters, n_row, replace = T)),
+    char_var = sample(letters, n_row, replace = TRUE),
     char_long_var = rep(paste(letters, collapse = ''), n_row),
-    char_colors_var = rep(sample(colors(), n_row, replace = T)),
-    date_var = Sys.Date() + rep(sample(-49:50, n_row, replace = T)),
-    datetime_var =
-      as.POSIXct(Sys.time()) + sample(0:(365 * 24 * 60 * 60), n_row, replace = TRUE),
-    factor_var = as.factor(rep(sample(paste0('factor_', 1:10), n_row, replace = T))),
-    num_nas_var = c(rep(NA, round(n_row/2)), rnorm(n_row - round(n_row/2))),
-    int_nas_var = c(rep(NA, round(n_row/2)), sample(1:100, n_row - round(n_row/2), replace = T)),
-    logical_var = rep(sample(c(TRUE, FALSE), n_row, replace = T)),
-    all_na = rep(NA, n_row)
+    char_colors_var = sample(colors(), n_row, replace = TRUE),
+    date_var = Sys.Date() + sample(-49:50, n_row, replace = TRUE),
+    posixct_var = as.POSIXct(Sys.time()) +
+      sample(0:(365 * 24 * 60 * 60), n_row, replace = TRUE),
+    factor_var = factor(sample(paste0('factor_', 1:10), n_row, replace = TRUE)),
+    logical_var = sample(c(TRUE, FALSE), n_row, replace = TRUE)
   )
+
+  test_data[, `:=`(
+    integer_var_na = add_na(integer_var),
+    numeric_var_na = add_na(numeric_var),
+    char_var_na = add_na(char_var),
+    char_long_var_na = add_na(char_long_var),
+    char_colors_var_na = add_na(char_colors_var),
+    date_var_na = add_na(date_var),
+    posixct_var_na = add_na(posixct_var),
+    factor_var_na = add_na(factor_var),
+    logical_var_na = add_na(logical_var)
+  )]
+
+  test_data <- test_data[, sort(names(test_data)), with = FALSE]
 
   extra_cols <- n_col - ncol(test_data)
 
@@ -997,13 +1054,13 @@ convert <- function(x, type, date_format = '%Y-%m-%d',
                     date_origin = '1970-01-01'){
   if(x |> is.raw()) x <- as.numeric(x)
 
-  if(type == 'as.numeric'){
+  if(type %in% c('as.numeric', 'numeric')){
     suppressWarnings(as.numeric(x))
-  } else if(type == 'as.integer'){
+  } else if(type%in% c('as.integer', 'integer')){
     suppressWarnings(as.integer(x))
-  } else if(type == 'as.character'){
+  } else if(type %in% c('as.character', 'char')){
     as.character(x)
-  } else if(type == 'as.Date'){
+  } else if(type %in% c('as.Date', 'date')){
     if(x |> inherits('Date')) {
       x
     } else if(is.numeric(x)){
@@ -1013,17 +1070,21 @@ convert <- function(x, type, date_format = '%Y-%m-%d',
         as.Date(x |> as.numeric(), origin = date_origin)
       )
     } else as.Date(x, format = date_format)
-  } else if(type == 'as.factor'){
+  } else if(type %in% c('as.factor', 'factor')){
     as.factor(x)
-  } else if(type == 'as.double'){
+  } else if(type %in% c('as.double', 'double')){
     suppressWarnings(as.double(x))
-  } else if(type == 'as.complex'){
+  } else if(type %in% c('as.complex', 'complex')){
     if(is.complex(x)){
       x
     } else {
       x1 <- suppressWarnings(as.numeric(x))
       as.complex(x1)
     }
+  } else if (type %in% c('as.logical', 'logical')){
+    as.logical(x)
+  } else if (type %in% c('as.posix', 'posix')){
+    as.POSIXct(x)
   }
 }
 
@@ -1123,6 +1184,18 @@ fun_help_modal <- function(pak, fun) {
   ))
 }
 
+# operations help -------------------------------------------------------------
+operations_help <- function(div_content){
+  showModal(
+    modalDialog(
+      title = div(icon('circle-question'), ' Help'),
+      size = 'l',
+      easyClose = TRUE,
+      div_content
+    )
+  )
+}
+
 # format decimals -------------------------------------------------------------
 f_dec <- function(x, dig = 0){
   if(is.numeric(x) && !is.na(x) |> all()){
@@ -1146,8 +1219,10 @@ test_all_equal <- function(x){
 
 # obj type --------------------------------------------------------------------
 obj_type <- function(x){
-  if(x |> is.numeric()) 'numeric'
-  else if (x |> is_date()) 'date'
+  if(x |> is.numeric() & x |> is.integer()) 'integer'
+  else if (x |> is.numeric() & x |> is.double()) 'double'
+  else if (x |> inherits('Date')) 'date'
+  else if (x |> inherits(c('POSIXct', 'POSIXlt', 'POSIXt'))) 'posix'
   else if (x |> is.factor()) 'factor'
   else if (x |> is.character()) 'char'
   else if (x |> is.logical()) 'logical'
@@ -1237,19 +1312,19 @@ abort_run_local_modal <- function(msg = 'Spada must run locally'){
 
 # show startup function -------------------------------------------------------
 show_startup_screen <- function() {
-  waiterShowOnLoad(html = tagList(
-    div(
-      class = 'screen-container',
+  waiterShowOnLoad(
+    html = tagList(
       div(
-        class = 'screen-title-box',
-        div('Spada', class = 'screen-title'),
-        div('a Shiny Package for Data Analysis', class = 'screen-subtitle2')
+        class = 'spada-waiter-card',
+        div(class = 'spada-waiter-title', 'Spada'),
+        div(class = 'spada-waiter-subtitle2', 'a Shiny Package for Data Analysis'),
+        div(class = 'spada-waiter-progress',  div(class = 'spada-waiter-bar')),
+        div(id = 'spada_startup_text', class = 'spada-waiter-log', 'Building UI'),
+        div(class = 'spada-waiter-card-footer', HTML('Powered by <strong>R and Shiny</strong>')),
       ),
-      waiter_spinner,
-      div(id = 'spada_startup_text', class = 'waiter-log', 'Building UI')
-    ),
-    waiter_right_foot
-  ))
+      waiter_right_foot()
+    )
+  )
 }
 
 # exit screen function --------------------------------------------------------
@@ -1258,28 +1333,23 @@ show_exit_screen <- function(save = TRUE) {
     html = {
       if(save){
         tagList(
-          div(
-            class = 'screen-container',
-            div(class = 'screen-title-box',
-            div('Spada is saving your work', class = 'screen-subtitle'),
-            div('Please do not close this window', class = 'screen-subtitle2')
-            ),
-            waiter_spinner,
-            div(id = 'spada_exit_text', class = 'waiter-log', '')
+          div(class = 'spada-waiter-card',
+            div('Spada is saving your work', class = 'spada-waiter-subtitle2'),
+            div('Please do not close this window', class = 'spada-waiter-subtitle3'),
+            div(class = 'spada-waiter-progress',  div(class = 'spada-waiter-bar')),
+            div(id = 'spada_exit_text', class = 'spada-waiter-log', '')
           ),
-          waiter_right_foot
+          waiter_right_foot()
         )
       } else {
         html = tagList(
           div(
-            class = 'screen-container',
-            div(class = 'screen-title-box',
-              div('Closing Spada', class = 'screen-subtitle')
-            ),
-            waiter_spinner,
-            div(id = 'spada_exit_text', class = 'waiter-log', 'Saving conf')
+            class = 'spada-waiter-card',
+            div('Closing Spada', class = 'spada-waiter-subtitle2'),
+            waiter_progress_bar,
+            div(id = 'spada_exit_text', class = 'spada-waiter-log', 'Saving conf')
           ),
-          waiter_right_foot
+          waiter_right_foot()
         )
       }
     }
@@ -1300,11 +1370,7 @@ waiter_text <- "
       const el = document.getElementById(data.id);
 
       if(el){
-        const line = document.createElement('div');
-
-        line.innerText = data.text;
-
-        el.appendChild(line);
+        el.innerText = data.text;
       }
     }
   )
@@ -1328,6 +1394,8 @@ spada_save <- function(dir, object, file_name){
 }
 
 # exit spada with saving session ----------------------------------------------
+exit_sleep_time <- 3
+
 exit_with_save <- function(session){
 
   show_exit_screen()
@@ -1335,17 +1403,18 @@ exit_with_save <- function(session){
   spada_save(session$userData$conf$data_dir,
              session$userData$dt$dt,
              'data.qs2')
-  Sys.sleep(0.3)
+  Sys.sleep(exit_sleep_time/3)
   update_waiter_text(session, 'spada_exit_text', 'Saving output')
   spada_save(session$userData$conf$data_dir,
              session$userData$out$elements,
              'output.qs2')
-  Sys.sleep(0.4)
+  Sys.sleep(exit_sleep_time/3)
   update_waiter_text(session, 'spada_exit_text', 'Saving conf')
   spada_save(session$userData$conf$conf_dir,
              reactiveValuesToList(session$userData$conf),
              'conf.qs2')
-  Sys.sleep(1)
+  Sys.sleep(exit_sleep_time/3)
+  update_waiter_text(session, 'spada_exit_text', 'Done')
   session$sendCustomMessage(type = 'closeWindow', message = 'message')
   if(session$userData$run_local) stopApp()
 }
@@ -1358,8 +1427,8 @@ exit_without_save <- function(session){
   spada_save(session$userData$conf$conf_dir,
              reactiveValuesToList(session$userData$conf),
              'conf.qs2')
-
-  Sys.sleep(3)
+  Sys.sleep(exit_sleep_time)
+  update_waiter_text(session, 'spada_exit_text', 'Done')
   session$sendCustomMessage(type = 'closeWindow', message = 'message')
   if(session$userData$run_local) stopApp()
 }
@@ -1863,8 +1932,7 @@ spada_plot <- function(
                      color = 'black',
                      na.rm = na_rm) +
       stat_function(fun = dnorm,
-                    args = list(mean = mean_value,
-                                sd = sd_value),
+                    args = list(mean = mean_value, sd = sd_value),
                     color = line_color,
                     linewidth = 1) +
       labs(title = title, x = xlab, y = ylab) +
@@ -1977,37 +2045,71 @@ plot_tag <- function(plot, w = 900, h = 300){
 }
 
 # status row for restore session ----------------------------------------------
-status_row <- function(icon_name, color, text) {
+status_row <- function(icon_name, color, title, type_icon){
   div(
     style = paste0(
-      'display:flex; align-items:center; gap:12px;
-       padding:12px 16px;
-       border-radius:2px;
-       background-color:', color, '15;'
+      'display:flex;
+       align-items:center;
+       gap:16px;
+       padding:18px 20px;
+       border-radius:16px;
+       background:#FFFFFF;
+       border-left:5px solid ', color, ';
+       box-shadow:0 2px 10px rgba(0,0,0,.05);'
     ),
-    icon(icon_name, style = paste0('font-size:20px; color:', color)),
-    tags$span(text, style = 'font-size:20px; font-weight:400;')
+
+    div(
+      style = paste0(
+        'width:44px;
+         height:44px;
+         border-radius:12px;
+         background:', color, '18;
+         display:flex;
+         align-items:center;
+         justify-content:center;
+         flex-shrink:0;'
+      ),
+      icon(icon_name, style = paste0('font-size:22px;color:', color))
+    ),
+
+    div(
+      style = '
+        flex:1;
+        font-size:20px;
+        font-weight:400;
+        color:#1C4B71;
+      ',
+      title
+    ),
+
+    div(
+      style = '
+        color:#607B95;
+        font-size:26px;
+        opacity:.75;
+      ',
+      icon(type_icon)
+    )
   )
 }
 
 # display restore status ------------------------------------------------------
-
 display_restore_status <- function(session_restore_status, btn_ok){
   list_check_restore <- div(
     style = 'display:flex; flex-direction:column; gap:12px;',
 
     switch(
       substr(session_restore_status, 1, 1),
-      '1' = status_row('check', '#2e7d32', 'Data restored successfully'),
-      '2' = status_row('times', '#c62828', 'Data not found'),
-      '3' = status_row('circle-question', '#ed6c02', 'Data in invalid format')
+      '1' = status_row('check', '#2e7d32', 'Data restored successfully', 'database'),
+      '2' = status_row('times', '#c62828', 'Data not found', 'database'),
+      '3' = status_row('circle-question', '#ed6c02', 'Data in invalid format', 'database')
     ),
 
     switch(
       substr(session_restore_status, 3, 3),
-      '1' = status_row('check', '#2e7d32', 'Output restored successfully'),
-      '2' = status_row('times', '#c62828', 'Output not found'),
-      '3' = status_row('circle-question', '#ed6c02', 'Output in invalid format')
+      '1' = status_row('check', '#2e7d32', 'Output restored successfully', 'tablet-screen-button'),
+      '2' = status_row('times', '#c62828', 'Output not found', 'tablet-screen-button'),
+      '3' = status_row('circle-question', '#ed6c02', 'Output in invalid format', 'tablet-screen-button')
     )
   )
 
@@ -2083,7 +2185,6 @@ dt_join <- function(dt1, dt2, vars1, vars2,
   )
   return(temp)
 }
-
 
 # math and other functions ----------------------------------------------------
 
@@ -2361,6 +2462,14 @@ mean_na <- function(x){
 
 mean_nona <- function(x){
   fmean(x, na.rm = T)
+}
+
+median_na <- function(x){
+  fmedian(x, na.rm = F)
+}
+
+median_nona <- function(x){
+  fmedian(x, na.rm = T)
 }
 
 min_na <- function(x){

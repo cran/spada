@@ -28,6 +28,7 @@ utils::globalVariables(
     'q3',
     'results',
     'rows',
+    'sel_var',
     'Sig Levels',
     'size',
     'terms',
@@ -37,6 +38,17 @@ utils::globalVariables(
     'Var1',
     'Var2',
     'x',
-    'y'
+    'y',
+    'integer_var',
+    'numeric_var',
+    'char_var',
+    'char_long_var',
+    'char_colors_var',
+    'date_var',
+    'datetime_var',
+    'factor_var',
+    'logical_var',
+    'posixct_var',
+    'waiter_right_foot'
     )
   )
