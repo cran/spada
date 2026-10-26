@@ -1,6 +1,6 @@
-1e79c5e68799386dcfa7a3deb590257b *DESCRIPTION
+f4c98f2b949616e5fa9cf1606dd71931 *DESCRIPTION
 f81adea2d5762f0ca62ca01255368ac6 *NAMESPACE
-f9d9622f0bd6df7a8ae20f003e01571c *NEWS.md
+e621ea5a29d9b91d377ed2674afd02d9 *NEWS.md
 4e6ab5d79afb2e98109886a3d6544ef9 *R/about_spada_module.R
 eae7ded2ba5fd50802aa8a1f41542cdb *R/calculate_cols_module.R
 e124e407f35b7782fa8b4717beb7f205 *R/config_module.R
@@ -49,7 +49,7 @@ ad769a2e38fdaafdb60cda3e19e68eb9 *R/utils.R
 504ec17329608558b3d49e43b836257e *build/vignette.rds
 3dd63deb9db66ac79fdb5714f47559bc *inst/doc/spada.R
 1d4a4ac86a08cd966ca44018f24f16d5 *inst/doc/spada.Rmd
-b2c551b53e0534610107569a7ca2a345 *inst/doc/spada.html
+e5eb3b6f942049795b066b040a9af35f *inst/doc/spada.html
 2c78c37ee91cb0e336a33bba5336f576 *inst/www/favicon-16x16.png
 771670fcf05cf39b6dc3b6814cc2ff55 *inst/www/favicon-32x32.png
 092f8f991d7c1719e6e5ce7f5cafb310 *inst/www/favicon.ico
@@ -113,6 +113,6 @@ cef4371ed5d70ac3d3be4c7bf516534a *tests/testthat/test-sidebar_module.R
 8c0dcdea1dab7dc42f31ea95080ce8d1 *tests/testthat/test-stats_table_module.R
 95589dfd7d2fc336fd73f7ed5f3ad9a2 *tests/testthat/test-summarise_module.R
 f6831c8a65d4faedf8fa68b5587ccc0e *tests/testthat/test-table_values_module.R
-36df450a9f5ae656302bc96792484290 *tests/testthat/test-utils.R
+17423d7e263888eb3145f8a4214619eb *tests/testthat/test-utils.R
 c4ab1df205e735fda84aa11d32795928 *tests/testthat/test-z_test_module.R
 1d4a4ac86a08cd966ca44018f24f16d5 *vignettes/spada.Rmd
